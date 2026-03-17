@@ -1,8 +1,6 @@
-::: {align="center"}
 <h3>Developing World Wage & Labor Vulnerability Pipeline</h3>
 
 <p>A data engineering pipeline that tracks how climate shocks, food insecurity, and structural vulnerability translate into wage depression and labor market deterioration in developing countries. <br /> <a href="#about-the-project"><strong>Explore the docs »</strong></a> <br /><br /> <a href="#roadmap">View Roadmap</a> · <a href="https://github.com/YOUR_USERNAME/YOUR_REPO_NAME/issues/new?labels=bug">Report Bug</a> · <a href="https://github.com/YOUR_USERNAME/YOUR_REPO_NAME/issues/new?labels=enhancement">Request Feature</a></p>
-:::
 
 ------------------------------------------------------------------------
 
@@ -22,7 +20,7 @@
 
 ------------------------------------------------------------------------
 
-## About The Project {#about-the-project}
+## About The Project
 
 The academic literature establishes that climate stress depresses wages in developing countries. This pipeline makes that relationship trackable in near real-time. Specifically I ask:
 
@@ -34,7 +32,7 @@ This project fuses five publicly available, freely accessible datasets to produc
 
 </p>
 
-### Built With {#built-with}
+### Built With
 
 [![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=for-the-badge&logo=apacheairflow&logoColor=white)](https://airflow.apache.org/) [![dbt](https://img.shields.io/badge/dbt-FF694B?style=for-the-badge&logo=dbt&logoColor=white)](https://www.getdbt.com/) [![BigQuery](https://img.shields.io/badge/BigQuery-4285F4?style=for-the-badge&logo=googlebigquery&logoColor=white)](https://cloud.google.com/bigquery) [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/) [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
@@ -42,18 +40,18 @@ This project fuses five publicly available, freely accessible datasets to produc
 
 ------------------------------------------------------------------------
 
-## Getting Started {#getting-started}
+## Getting Started
 
 Follow these steps for a local copy.
 
-### Prerequisites {#prerequisites}
+### Prerequisites
 
 -   [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 -   [Google Cloud account](https://cloud.google.com/) with a BigQuery project set up
 -   A Google Cloud service account key (JSON) with BigQuery permissions
 -   Python 3.10+
 
-### Installation {#installation}
+### Installation
 
 > **In Progress** — full setup instructions will be added as the pipeline is built.
 
@@ -96,7 +94,7 @@ Follow these steps for a local copy.
 
 ------------------------------------------------------------------------
 
-## Usage {#usage}
+## Usage
 
 > **In Progress** — usage examples and screenshots will be added as the pipeline and dashboard are built.
 
@@ -111,26 +109,26 @@ The pipeline produces a composite country-level index (`fct_wage_climate_vulnera
 
 ------------------------------------------------------------------------
 
-## Roadmap {#roadmap}
+## Roadmap
 
--   [ ] Airflow DAG skeleton & Docker Compose setup
--   [ ] World Bank API ingestion (`stg_economic`)
--   [ ] ILOSTAT API ingestion (`stg_labor`)
--   [ ] FAOSTAT API ingestion (`stg_food`)
--   [ ] ND-GAIN CSV ingestion (`stg_vulnerability`)
--   [ ] CHIRPS rainfall ingestion (`stg_climate`)
--   [ ] `dim_countries` — ISO code reconciliation across all sources
--   [ ] `fct_labor_conditions` — wide-format analytical labor table
--   [ ] `fct_wage_climate_vulnerability` — composite index (main output)
--   [ ] dbt tests & data quality documentation
--   [ ] Dashboard (Metabase or Evidence.dev)
--   [ ] Full setup documentation
+-   Airflow DAG skeleton & Docker Compose setup
+-   World Bank API ingestion (`stg_economic`)
+-   ILOSTAT API ingestion (`stg_labor`)
+-   FAOSTAT API ingestion (`stg_food`)
+-   ND-GAIN CSV ingestion (`stg_vulnerability`)
+-   CHIRPS rainfall ingestion (`stg_climate`)
+-   `dim_countries` — ISO code reconciliation across all sources
+-   `fct_labor_conditions` — wide-format analytical labor table
+-   `fct_wage_climate_vulnerability` — composite index (main output)
+-   dbt tests & data quality documentation
+-   Dashboard (Metabase or Evidence.dev)
+-   Full setup documentation
 
 </p>
 
 ------------------------------------------------------------------------
 
-## Data Sources {#data-sources}
+## Data Sources
 
 All five sources are fully automatable with no scraping required.
 
@@ -147,6 +145,8 @@ All five sources are fully automatable with no scraping required.
 ------------------------------------------------------------------------
 
 ## Pipeline Architecture {#pipeline-architecture}
+
+> **In Progress** - Preliminary pipeline architecture.
 
 ```         
 ┌─────────────────────────────────────────────────────────────────────┐
