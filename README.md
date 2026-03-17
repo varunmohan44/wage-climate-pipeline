@@ -197,7 +197,7 @@ models/
 
 ------------------------------------------------------------------------
 
-## Contact {#contact}
+## Contact
 
 Varun Mohan — [LinkedIn](https://linkedin.com/in/YOUR_HANDLE) — varunmohann\@gmail.com
 
@@ -205,7 +205,7 @@ Project Link: <https://github.com/YOUR_USERNAME/YOUR_REPO_NAME>
 
 ------------------------------------------------------------------------
 
-## Acknowledgments {#acknowledgments}
+## Acknowledgments
 
 -   [ILOSTAT — International Labour Organization](https://ilostat.ilo.org/)
 -   [World Bank Open Data](https://data.worldbank.org/)
