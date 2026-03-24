@@ -32,9 +32,10 @@ This project fuses five publicly available, freely accessible datasets to produc
 
 </p>
 
+
 ### Built With
 
-[![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=for-the-badge&logo=apacheairflow&logoColor=white)](https://airflow.apache.org/) [![dbt](https://img.shields.io/badge/dbt-FF694B?style=for-the-badge&logo=dbt&logoColor=white)](https://www.getdbt.com/) [![BigQuery](https://img.shields.io/badge/BigQuery-4285F4?style=for-the-badge&logo=googlebigquery&logoColor=white)](https://cloud.google.com/bigquery) [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/) [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=for-the-badge&logo=apacheairflow&logoColor=white)](https://airflow.apache.org/) [![dbt](https://img.shields.io/badge/dbt-FF694B?style=for-the-badge&logo=dbt&logoColor=white)](https://www.getdbt.com/) [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/) [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/) [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
 </p>
 
@@ -47,8 +48,9 @@ Follow these steps for a local copy.
 ### Prerequisites
 
 -   [Docker Desktop](https://www.docker.com/products/docker-desktop/)
--   [Google Cloud account](https://cloud.google.com/) with a BigQuery project set up
--   A Google Cloud service account key (JSON) with BigQuery permissions
+-   PostgreSQL server (local or hosted) — Postgres 13+ recommended
+-   A PostgreSQL database and user with privileges for the project
+-   A connection string (DATABASE_URL) or separate connection details for dbt and Airflow
 -   Python 3.10+
 
 ### Installation
@@ -68,10 +70,11 @@ Follow these steps for a local copy.
     cp .env.example .env
     ```
 
-3.  Add your Google Cloud service account key to the project root
+3.  Add your PostgreSQL connection to the project configuration
 
     ``` sh
-    # Place your key file at: ./gcp-keyfile.json
+    # Example: add to .env or export in your shell
+    DATABASE_URL=postgresql://db_user:db_password@localhost:5432/wage_climate
     ```
 
 4.  Start Airflow with Docker Compose
@@ -87,7 +90,7 @@ Follow these steps for a local copy.
     ``` sh
     cd dbt
     dbt deps
-    dbt debug  # verify BigQuery connection
+    dbt debug  # verify PostgreSQL connection
     ```
 
 </p>
@@ -98,7 +101,7 @@ Follow these steps for a local copy.
 
 > **In Progress** — usage examples and screenshots will be added as the pipeline and dashboard are built.
 
-The pipeline produces a composite country-level index (`fct_wage_climate_vulnerability`) queryable directly in BigQuery or via the dashboard. The index tracks:
+The pipeline produces a composite country-level index (`fct_wage_climate_vulnerability`) queryable directly in PostgreSQL or via the dashboard. The index tracks:
 
 -   Real wage trends vs. drought severity (SPI)
 -   Informality rate changes following food price shocks
@@ -155,7 +158,7 @@ All five sources are fully automatable with no scraping required.
 └──────────────────────────────┬──────────────────────────────────────┘
                                │ Airflow DAGs (Python)
 ┌──────────────────────────────▼──────────────────────────────────────┐
-│                      BigQuery — Raw Layer                           │
+│                      PostgreSQL — Raw Layer                          │
 │        raw_labor │ raw_economic │ raw_climate │ raw_food │ raw_gain │
 └──────────────────────────────┬──────────────────────────────────────┘
                                │ dbt Core
