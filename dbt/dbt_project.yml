@@ -1,0 +1,40 @@
+
+name: 'wage_climate_vulnerability'
+version: '1.0.0'
+
+profile: 'wage_climate'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+
+# Configuring models
+# Full documentation: https://docs.getdbt.com/docs/configuring-models
+
+# In this example config, we tell dbt to build all models in the example/
+# directory as views. These settings can be overridden in the individual model
+# files using the `{{ config(...) }}` macro.
+models:
+  wage_climate_vulnerability:
+    staging:
+      materialized: view
+      schema: staging
+      tags: ["dimensions"]
+
+    facts:
+      materialized: table
+      schema: facts
+      tags: ["facts"]
+
+vars:
+  start_year: 2000
+  end_year: 2024

@@ -1,0 +1,27 @@
+# Environment & credentials
+.env
+gcp-keyfile.json
+*.json
+
+# PyCharm
+.idea/
+
+# Airflow runtime
+logs/
+config/
+plugins/
+
+# dbt
+dbt/wage_climate/models/example/
+dbt/wage_climate/target/
+dbt/wage_climate/dbt_packages/
+dbt/wage_climate/logs/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# OS
+.DS_Store
