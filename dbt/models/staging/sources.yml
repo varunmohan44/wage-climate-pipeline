@@ -1,0 +1,46 @@
+# models/staging/sources.yml
+#
+# Declares the raw Postgres tables as dbt sources.
+# This is what allows {{ source('raw', 'raw_economic') }} to resolve
+# in staging models, and enables dbt source freshness checks.
+
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw ingestion layer, written directly by Airflow DAGs, not for transformations"
+    schema: raw
+    tables:
+
+      - name: raw_economic
+        description: "World Bank WDI indicators. One row per country × indicator × year. Loaded by dag_ingest_economic."
+        columns:
+          - name: country_code
+            description: "ISO 3166-1 alpha-3 country code"
+          - name: country_name
+            description: "World Bank country name"
+          - name: indicator_code
+            description: "World Bank indicator code (e.g. NY.GDP.PCAP.CD)"
+          - name: indicator_name
+            description: "Human-readable indicator name"
+          - name: year
+            description: "Calendar year of observation"
+          - name: value
+            description: "Indicator value. NULL when World Bank reports no data for that country/year."
+          - name: loaded_at
+            description: "Timestamp of first ingestion"
+          - name: updated_at
+            description: "Timestamp of most recent upsert"
+
+      # future sources
+      # - name: raw_labor
+      #   description: "ILOSTAT wage and labor indicators"
+
+      # - name: raw_climate
+      #   description: "CHIRPS standardized precipitation index"
+
+      # - name: raw_food
+      #   description: "FAOSTAT food security indicators"
+
+      # - name: raw_vulnerability
+      #   description: "ND-GAIN country vulnerability and readiness scores"
