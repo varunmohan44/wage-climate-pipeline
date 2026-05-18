@@ -12,6 +12,10 @@ config/
 plugins/
 
 # dbt
+# Ignore generated root dbt artifacts and any nested dbt project outputs.
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
 dbt/wage_climate/models/example/
 dbt/wage_climate/target/
 dbt/wage_climate/dbt_packages/

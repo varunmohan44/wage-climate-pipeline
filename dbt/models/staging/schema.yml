@@ -42,7 +42,4 @@ models:
 
     tests:
       # no duplicate country/year combinations
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - country_code
-            - year
+      - unique_country_year
