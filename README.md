@@ -118,7 +118,7 @@ The pipeline produces a composite country-level index (`fct_wage_climate_vulnera
 -   World Bank API ingestion (`stg_economic`)
 -   ILOSTAT API ingestion (`stg_labor`)
 -   FAOSTAT API ingestion (`stg_food`)
--   ND-GAIN CSV ingestion (`stg_vulnerability`)
+-   ND-GAIN CSV ingestion (`stg_gain`)
 -   CHIRPS rainfall ingestion (`stg_climate`)
 -   `dim_countries` — ISO code reconciliation across all sources
 -   `fct_labor_conditions` — wide-format analytical labor table
@@ -145,6 +145,9 @@ All five sources are fully automatable with no scraping required.
 
 </p>
 
+> Note: ND-GAIN ingestion loads raw CSV data from `ND_GAIN_CSV_URL` or a local `ND_GAIN_CSV_PATH`.
+
+
 ------------------------------------------------------------------------
 
 ## Pipeline Architecture {#pipeline-architecture}
@@ -164,7 +167,7 @@ All five sources are fully automatable with no scraping required.
                                │ dbt Core
 ┌──────────────────────────────▼──────────────────────────────────────┐
 │                     dbt — Staging Layer                             │
-│stg_labor │ stg_economic │ stg_climate │ stg_food │ stg_vulnerability│
+│stg_labor │ stg_economic │ stg_climate │ stg_food │ stg_gain│
 └──────────────────────────────┬──────────────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────────────┐
@@ -188,7 +191,7 @@ models/
 │   ├── stg_economic.sql         # World Bank: GDP, poverty, ODA
 │   ├── stg_climate.sql          # CHIRPS: SPI drought classification
 │   ├── stg_food.sql             # FAOSTAT: undernourishment, cereal yield
-│   └── stg_vulnerability.sql    # ND-GAIN: vulnerability & readiness scores
+│   └── stg_gain.sql    # ND-GAIN: vulnerability & readiness scores
 ├── dimensions/
 │   └── dim_countries.sql        # ISO code reconciliation (SCD)
 └── facts/
