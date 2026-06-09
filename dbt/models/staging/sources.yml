@@ -36,11 +36,8 @@ sources:
       # - name: raw_labor
       #   description: "ILOSTAT wage and labor indicators"
 
-      # - name: raw_climate
-      #   description: "CHIRPS standardized precipitation index"
-
-      # - name: raw_food
-      #   description: "FAOSTAT food security indicators"
+      
+      
 
       - name: raw_gain
         description: "ND-GAIN country vulnerability and readiness scores loaded by dag_ingest_nd_gain."

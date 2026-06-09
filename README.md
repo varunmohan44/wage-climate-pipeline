@@ -28,7 +28,7 @@ How do climate shocks, food insecurity, and structural vulnerability translate i
 
 Climate and food signals are the explanatory variables. Wages and labor conditions, informed by things like informality rates, working poverty, and gender wage gaps, are what is being explained. The output is a composite country-level index (`fct_wage_climate_vulnerability`) that tracks which countries in the global south are caught in cycles where climate stress worsens wages and deteriorates the labor market and which are showing resilience.
 
-This project fuses five publicly available, freely accessible datasets to produce that index. Specifically I join ILOSTAT wage data with CHIRPS drought indices, FAOSTAT food security indicators, and ND-GAIN vulnerability scores.
+This project fuses multiple publicly available datasets to produce that index. Specifically I join ILOSTAT wage data with World Bank indicators and ND-GAIN vulnerability scores.
 
 </p>
 
@@ -117,9 +117,9 @@ The pipeline produces a composite country-level index (`fct_wage_climate_vulnera
 -   Airflow DAG skeleton & Docker Compose setup
 -   World Bank API ingestion (`stg_economic`)
 -   ILOSTAT API ingestion (`stg_labor`)
--   FAOSTAT API ingestion (`stg_food`)
+ 
 -   ND-GAIN CSV ingestion (`stg_gain`)
--   CHIRPS rainfall ingestion (`stg_climate`)
+ 
 -   `dim_countries` — ISO code reconciliation across all sources
 -   `fct_labor_conditions` — wide-format analytical labor table
 -   `fct_wage_climate_vulnerability` — composite index (main output)
@@ -139,8 +139,8 @@ All five sources are fully automatable with no scraping required.
 |----|----|----|----|
 | [ILOSTAT](https://ilostat.ilo.org/data/) | **Anchor** — wages, informality, working poverty, gender wage gap | Monthly | REST API |
 | [World Bank WDI](https://data.worldbank.org/) | Structural economic context (GDP, poverty headcount, rural pop, ODA) | Annual | REST API |
-| [CHIRPS (UCSB)](https://www.chc.ucsb.edu/data/chirps) | Drought severity — Standardized Precipitation Index (SPI) | Monthly | Pre-aggregated CSV |
-| [FAOSTAT](https://www.fao.org/faostat/) | Food insecurity, undernourishment prevalence, cereal yield | Annual | REST API |
+ 
+| [FAOSTAT](https://www.fao.org/faostat/) | Food insecurity (archived) | Annual | REST API |
 | [ND-GAIN](https://gain.nd.edu/our-work/country-index/) | Structural climate vulnerability & adaptive readiness (slowly changing dimension) | Annual | Static CSV |
 
 </p>
@@ -157,7 +157,7 @@ All five sources are fully automatable with no scraping required.
 ```         
 ┌─────────────────────────────────────────────────────────────────────┐
 │                          Data Sources                               │
-│  ILOSTAT API │ World Bank API │ CHIRPS CSV │ FAOSTAT API │ ND-GAIN  │
+│  ILOSTAT API │ World Bank API │ ND-GAIN  │
 └──────────────────────────────┬──────────────────────────────────────┘
                                │ Airflow DAGs (Python)
 ┌──────────────────────────────▼──────────────────────────────────────┐
@@ -189,8 +189,6 @@ models/
 ├── staging/
 │   ├── stg_labor.sql            # ILOSTAT: pivoted to wide format
 │   ├── stg_economic.sql         # World Bank: GDP, poverty, ODA
-│   ├── stg_climate.sql          # CHIRPS: SPI drought classification
-│   ├── stg_food.sql             # FAOSTAT: undernourishment, cereal yield
 │   └── stg_gain.sql    # ND-GAIN: vulnerability & readiness scores
 ├── dimensions/
 │   └── dim_countries.sql        # ISO code reconciliation (SCD)
@@ -215,7 +213,7 @@ Project Link: <https://github.com/YOUR_USERNAME/YOUR_REPO_NAME>
 
 -   [ILOSTAT — International Labour Organization](https://ilostat.ilo.org/)
 -   [World Bank Open Data](https://data.worldbank.org/)
--   [CHIRPS — Climate Hazards Center, UC Santa Barbara](https://www.chc.ucsb.edu/data/chirps)
--   [FAOSTAT — UN Food and Agriculture Organization](https://www.fao.org/faostat/)
+ 
+    [ND-GAIN Country Index — Notre Dame Global Adaptation Initiative](https://gain.nd.edu/)
 -   [ND-GAIN Country Index — Notre Dame Global Adaptation Initiative](https://gain.nd.edu/)
 -   [shields.io](https://shields.io)
