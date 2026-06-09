@@ -36,9 +36,7 @@ sources:
       # - name: raw_labor
       #   description: "ILOSTAT wage and labor indicators"
 
-      # - name: raw_climate
-      #   description: "CHIRPS standardized precipitation index"
-
+      
       
 
       - name: raw_gain
