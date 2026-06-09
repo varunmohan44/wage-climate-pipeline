@@ -34,11 +34,38 @@ models:
 
       - name: oda_received_usd
         description: "Net official development assistance received in current USD (DT.ODA.ALLD.CD). Null when WB has no data."
-
       - name: dbt_updated_at
         description: "Timestamp this row was last processed by dbt"
         tests:
           - not_null
+
+  - name: stg_climate
+    description: "Staging model for World Bank climate proxy indicators."
+    columns:
+      - name: country_code
+        description: "ISO 3166-1 alpha-3 country code"
+        tests:
+          - not_null
+      - name: country_name
+        description: "World Bank country name"
+        tests:
+          - not_null
+      - name: year
+        description: "Calendar year of observation"
+        tests:
+          - not_null
+      - name: access_to_electricity_pct
+        description: "Access to electricity as a share of population (EG.ELC.ACCS.ZS). Proxy for adaptation capacity and infrastructure resilience."
+      - name: freshwater_withdrawal_pct_internal_resources
+        description: "Freshwater withdrawal as % of internal water resources (ER.H2O.FWTL.ZS). Proxy for water stress and climate vulnerability."
+      - name: precipitation_mm
+        description: "Annual precipitation in millimeters (AG.LND.PRCP.MM). Climate exposure signal."
+      - name: arable_land_pct
+        description: "Arable land as % of land area (AG.LND.ARBL.ZS). Agricultural vulnerability / climate-sensitive land dependence."
+      - name: forest_area_pct
+        description: "Forest area as % of land area (AG.LND.FRST.ZS). Ecological resilience and land-use buffer."
+      - name: dbt_updated_at
+        description: "Timestamp this row was last processed by dbt"
 
   - name: stg_gain
     description: "Staging model for ND-GAIN vulnerability and readiness scores."
