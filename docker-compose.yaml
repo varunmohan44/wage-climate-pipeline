@@ -14,6 +14,8 @@ x-airflow-common:
     AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     _PIP_ADDITIONAL_REQUIREMENTS: "${_PIP_ADDITIONAL_REQUIREMENTS:--r /opt/airflow/requirements.txt}"
+    ND_GAIN_CSV_URL: ${ND_GAIN_CSV_URL:-}
+    ND_GAIN_CSV_PATH: ${ND_GAIN_CSV_PATH:-}
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
   volumes:
     - ./dags:/opt/airflow/dags
