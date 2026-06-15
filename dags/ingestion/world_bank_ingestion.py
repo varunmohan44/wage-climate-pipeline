@@ -1,8 +1,10 @@
 """Fetches World Bank indicators and saves them to Postgres."""
 
 import os
-import requests
+import time
+
 import psycopg2
+import requests
 
 
 INDICATORS = [
@@ -31,13 +33,24 @@ def get_connection():
     return psycopg2.connect(**DB_CONFIG)
 
 
-def fetch_indicator(indicator_code):
+def fetch_valid_country_iso3() -> set:
+    """Return the set of valid ISO3 country codes from the World Bank country list."""
+    response = requests.get(
+        "https://api.worldbank.org/v2/country",
+        params={"format": "json", "per_page": 500, "type": "country"},
+        timeout=30,
+    )
+    response.raise_for_status()
+    _, countries = response.json()
+    return {c["id"] for c in countries if c.get("id")}
+
+
+def fetch_indicator(indicator_code, valid_iso3: set):
     url = f"https://api.worldbank.org/v2/country/all/indicator/{indicator_code}"
     params = {
         "format": "json",
         "per_page": 1000,
         "date": "2000:2024",
-        "lendingType": "IBD,IDB",
     }
 
     records = []
@@ -45,7 +58,11 @@ def fetch_indicator(indicator_code):
 
     with requests.Session() as session:
         while True:
-            response = session.get(url, params={**params, "page": page}, timeout=30)
+            for attempt in range(3):
+                response = session.get(url, params={**params, "page": page}, timeout=30)
+                if response.status_code == 200:
+                    break
+                time.sleep(2 ** attempt)
             response.raise_for_status()
             data = response.json()
 
@@ -59,8 +76,11 @@ def fetch_indicator(indicator_code):
                 break
 
             for record in page_records:
+                iso3 = record.get("countryiso3code", "")
+                if iso3 not in valid_iso3:
+                    continue
                 records.append({
-                    "country_code": record["country"]["id"],
+                    "country_code": iso3,
                     "country_name": record["country"]["value"],
                     "indicator_name": record["indicator"]["value"],
                     "year": int(record["date"]),
@@ -108,10 +128,11 @@ def save_records(conn, indicator_code, records):
 
 
 def run_ingestion():
+    valid_iso3 = fetch_valid_country_iso3()
     with get_connection() as conn:
         for indicator_code in INDICATORS:
             print(f"Fetching {indicator_code}...")
-            records = fetch_indicator(indicator_code)
+            records = fetch_indicator(indicator_code, valid_iso3)
             save_records(conn, indicator_code, records)
 
     print("Done")
