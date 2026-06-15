@@ -10,6 +10,12 @@ INDICATORS = [
     "SI.POV.DDAY",
     "SP.RUR.TOTL.ZS",
     "DT.ODA.ALLD.CD",
+    # Climate exposure and adaptation proxies
+    "EG.ELC.ACCS.ZS",  # Access to electricity (% of population)
+    "ER.H2O.FWTL.ZS",  # Freshwater withdrawal (% of internal resources)
+    "AG.LND.PRCP.MM",  # Annual precipitation (mm)
+    "AG.LND.ARBL.ZS",  # Arable land (% of land area)
+    "AG.LND.FRST.ZS",  # Forest area (% of land area)
 ]
 
 DB_CONFIG = {
