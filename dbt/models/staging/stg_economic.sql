@@ -44,7 +44,10 @@ final AS (
         country_code, country_name, year,
 
         -- indicators
-        gdp_per_capita_usd, poverty_headcount_ratio, rural_population_pct, oda_received_usd,
+        gdp_per_capita_usd,
+        poverty_headcount_ratio,
+        rural_population_pct,
+        oda_received_usd,
 
         -- audit
         CURRENT_TIMESTAMP AS dbt_updated_at

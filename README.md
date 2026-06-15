@@ -139,6 +139,7 @@ All five sources are fully automatable with no scraping required.
 |----|----|----|----|
 | [ILOSTAT](https://ilostat.ilo.org/data/) | **Anchor** — wages, informality, working poverty, gender wage gap | Monthly | REST API |
 | [World Bank WDI](https://data.worldbank.org/) | Structural economic context (GDP, poverty headcount, rural pop, ODA) | Annual | REST API |
+| [World Bank WDI climate proxies](https://data.worldbank.org/) | Climate exposure/adaptation proxies such as electricity access, freshwater withdrawal, precipitation, arable land, and forest cover | Annual | REST API |
  
 | [FAOSTAT](https://www.fao.org/faostat/) | Food insecurity (archived) | Annual | REST API |
 | [ND-GAIN](https://gain.nd.edu/our-work/country-index/) | Structural climate vulnerability & adaptive readiness (slowly changing dimension) | Annual | Static CSV |

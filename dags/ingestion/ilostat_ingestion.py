@@ -66,6 +66,7 @@ def fetch_indicator(indicator_code: str) -> list[dict]:
         ref_idx = next((i for i, d in enumerate(dim_ids) if d in ("REF_AREA", "COUNTRY")), None)
         sex_idx = next((i for i, d in enumerate(dim_ids) if d == "SEX"), None)
         eco_idx = next((i for i, d in enumerate(dim_ids) if d in ("ECONOMIC_ACTIVITY", "ECO")), None)
+        ste_idx = next((i for i, d in enumerate(dim_ids) if d == "STE"), None)
 
         country_lookup = {v["id"]: v["name"] for v in series_dims[ref_idx]["values"]} if ref_idx is not None else {}
         meas_dim = next((d for d in series_dims if d["id"] == "MEASURE"), None)
@@ -76,6 +77,7 @@ def fetch_indicator(indicator_code: str) -> list[dict]:
             country_code = dim_lookup[ref_idx].get(indices[ref_idx], "") if ref_idx is not None else ""
             sex = dim_lookup[sex_idx].get(indices[sex_idx], "SEX_T") if sex_idx is not None else "SEX_T"
             activity = dim_lookup[eco_idx].get(indices[eco_idx], "_T") if eco_idx is not None else "_T"
+            ste = dim_lookup[ste_idx].get(indices[ste_idx], "_T") if ste_idx is not None else "_T"
 
             if sex not in KEEP_SEX or activity not in KEEP_ACTIVITY:
                 continue
@@ -90,6 +92,7 @@ def fetch_indicator(indicator_code: str) -> list[dict]:
                         "indicator_name": indicator_name,
                         "sex": sex,
                         "economic_activity": activity,
+                        "status_in_employment": ste,
                         "year": int(period),
                         "value": obs_value[0] if obs_value else None,
                     })
@@ -99,6 +102,7 @@ def fetch_indicator(indicator_code: str) -> list[dict]:
         ref_idx = next((i for i, d in enumerate(obs_ids) if d in ("REF_AREA", "COUNTRY")), None)
         sex_idx = next((i for i, d in enumerate(obs_ids) if d == "SEX"), None)
         eco_idx = next((i for i, d in enumerate(obs_ids) if d in ("ECONOMIC_ACTIVITY", "ECO")), None)
+        ste_idx = next((i for i, d in enumerate(obs_ids) if d == "STE"), None)
         time_idx = next((i for i, d in enumerate(obs_ids) if d == "TIME_PERIOD"), None)
         country_lookup = {v["id"]: v["name"] for v in obs_dims[ref_idx]["values"]} if ref_idx is not None else {}
         meas_dim = next((d for d in obs_dims if d["id"] == "MEASURE"), None)
@@ -112,6 +116,7 @@ def fetch_indicator(indicator_code: str) -> list[dict]:
             country_code = obs_dim_lookup[ref_idx].get(indices[ref_idx], "") if ref_idx is not None else ""
             sex = obs_dim_lookup[sex_idx].get(indices[sex_idx], "SEX_T") if sex_idx is not None else "SEX_T"
             activity = obs_dim_lookup[eco_idx].get(indices[eco_idx], "_T") if eco_idx is not None else "_T"
+            ste = obs_dim_lookup[ste_idx].get(indices[ste_idx], "_T") if ste_idx is not None else "_T"
             period = obs_dim_lookup[time_idx].get(indices[time_idx], "") if time_idx is not None else ""
 
             if sex not in KEEP_SEX or activity not in KEEP_ACTIVITY:
@@ -126,6 +131,7 @@ def fetch_indicator(indicator_code: str) -> list[dict]:
                 "indicator_name": indicator_name,
                 "sex": sex,
                 "economic_activity": activity,
+                "status_in_employment": ste,
                 "year": int(period),
                 "value": obs_value[0] if obs_value else None,
             })
@@ -141,16 +147,15 @@ def save_records(conn, indicator_code: str, records: list[dict]) -> None:
     query = """
         INSERT INTO raw.raw_labor (
             country_code, country_name, indicator_code, indicator_name,
-            sex, economic_activity, year, value
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (country_code, indicator_code, sex, economic_activity, year)
+            sex, economic_activity, status_in_employment, year, value
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (country_code, indicator_code, sex, economic_activity, status_in_employment, year)
         DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     """
-    
-    # unpack dict values directly into a clean tuple generator
+
     data_tuples = (
         (r["country_code"], r["country_name"], r["indicator_code"], r["indicator_name"],
-         r["sex"], r["economic_activity"], r["year"], r["value"]) 
+         r["sex"], r["economic_activity"], r["status_in_employment"], r["year"], r["value"])
         for r in records
     )
 
