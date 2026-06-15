@@ -1,10 +1,26 @@
-"""Fetches ND-GAIN country vulnerability and readiness data and writes it to Postgres."""
+"""Fetches ND-GAIN vulnerability and readiness scores and writes them to Postgres.
+
+Data is published as a ZIP containing wide-format CSVs (ISO3, Name, 1995..2023).
+The three files we need are:
+  resources/gain/gain.csv                    -- overall GAIN score (0-100)
+  resources/vulnerability/vulnerability.csv  -- vulnerability score (0-1)
+  resources/readiness/readiness.csv          -- readiness score (0-1)
+"""
 
 import csv
 import io
 import os
-import requests
+import zipfile
+
 import psycopg2
+import requests
+
+GAIN_ZIP_URL = "https://gain.nd.edu/assets/647440/ndgain_countryindex_2026.zip"
+
+_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (compatible; wage-climate-pipeline/1.0)",
+    "Referer": "https://gain.nd.edu/our-work/country-index/download-data/",
+}
 
 DB_CONFIG = {
     "host": os.getenv("PIPELINE_DB_HOST", "pipeline-db"),
@@ -19,107 +35,83 @@ def get_connection():
     return psycopg2.connect(**DB_CONFIG)
 
 
-def parse_int(value: str | None) -> int | None:
-    if value is None:
-        return None
-    value = value.strip()
-    if not value:
-        return None
-    try:
-        return int(float(value.replace(",", "")))
-    except ValueError:
-        return None
+def _download_zip() -> bytes:
+    url = os.getenv("ND_GAIN_ZIP_URL", GAIN_ZIP_URL)
+    response = requests.get(url, headers=_HEADERS, timeout=60)
+    response.raise_for_status()
+    return response.content
 
 
-def parse_float(value: str | None) -> float | None:
-    if value is None:
-        return None
-    value = value.strip()
-    if not value:
-        return None
-    try:
-        return float(value.replace(",", ""))
-    except ValueError:
-        return None
+def _parse_wide(zf: zipfile.ZipFile, member: str) -> dict[str, dict[str, float | None]]:
+    """Read a wide CSV and return {iso3: {year_str: value_or_None}}."""
+    with zf.open(member) as raw:
+        reader = csv.DictReader(io.TextIOWrapper(raw, encoding="utf-8"))
+        result: dict[str, dict[str, float | None]] = {}
+        for row in reader:
+            iso3 = row.get("ISO3", "").strip()
+            if not iso3:
+                continue
+            years: dict[str, float | None] = {}
+            for col, val in row.items():
+                if col in ("ISO3", "Name") or not col.isdigit():
+                    continue
+                stripped = val.strip() if val else ""
+                years[col] = float(stripped) if stripped else None
+            result[iso3] = years
+    return result
 
 
-def normalize_text(value: str | None) -> str:
-    return value.strip() if value and value.strip() else ""
+def _country_names(zf: zipfile.ZipFile, member: str) -> dict[str, str]:
+    with zf.open(member) as raw:
+        reader = csv.DictReader(io.TextIOWrapper(raw, encoding="utf-8"))
+        return {
+            row["ISO3"].strip(): row.get("Name", "").strip()
+            for row in reader
+            if row.get("ISO3", "").strip()
+        }
 
 
-def get_csv_source_url() -> str | None:
-    return os.getenv("ND_GAIN_CSV_URL")
+def fetch_gain_records() -> list[dict]:
+    zip_bytes = _download_zip()
 
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+        gain_scores = _parse_wide(zf, "resources/gain/gain.csv")
+        vuln_scores = _parse_wide(zf, "resources/vulnerability/vulnerability.csv")
+        read_scores = _parse_wide(zf, "resources/readiness/readiness.csv")
+        names = _country_names(zf, "resources/gain/gain.csv")
 
-def get_csv_source_path() -> str | None:
-    return os.getenv("ND_GAIN_CSV_PATH")
+    all_iso3 = set(gain_scores) | set(vuln_scores) | set(read_scores)
+    records = []
 
-
-def read_csv_rows() -> list[dict]:
-    local_path = get_csv_source_path()
-    if local_path:
-        with open(local_path, newline="", encoding="utf-8") as handle:
-            return list(csv.DictReader(handle))
-
-    csv_url = get_csv_source_url()
-    if not csv_url:
-        raise RuntimeError(
-            "ND-GAIN ingestion requires ND_GAIN_CSV_URL or ND_GAIN_CSV_PATH to be set."
+    for iso3 in sorted(all_iso3):
+        country_name = names.get(iso3, iso3)
+        all_years = (
+            set(gain_scores.get(iso3, {}))
+            | set(vuln_scores.get(iso3, {}))
+            | set(read_scores.get(iso3, {}))
         )
 
-    response = requests.get(csv_url, timeout=60)
-    response.raise_for_status()
-    return list(csv.DictReader(io.StringIO(response.text)))
+        for year_str in sorted(all_years):
+            if not (year_str.isdigit() and len(year_str) == 4):
+                continue
 
+            overall = gain_scores.get(iso3, {}).get(year_str)
+            vuln = vuln_scores.get(iso3, {}).get(year_str)
+            ready = read_scores.get(iso3, {}).get(year_str)
 
-def parse_gain_row(row: dict) -> dict:
-    country_code = (
-        row.get("ISO3")
-        or row.get("Country Code")
-        or row.get("ISO 3")
-        or row.get("iso3")
-        or row.get("CountryCode")
-        or ""
-    )
+            if overall is None and vuln is None and ready is None:
+                continue
 
-    country_name = (
-        row.get("Country")
-        or row.get("country")
-        or row.get("Country Name")
-        or ""
-    )
+            records.append({
+                "country_code": iso3,
+                "country_name": country_name,
+                "year": int(year_str),
+                "vulnerability_score": vuln,
+                "readiness_score": ready,
+                "overall_score": overall,
+            })
 
-    return {
-        "country_code": normalize_text(country_code),
-        "country_name": normalize_text(country_name),
-        "year": parse_int(row.get("Year") or row.get("year")),
-        "vulnerability_score": parse_float(
-            row.get("Vulnerability") or row.get("Vulnerability Score")
-        ),
-        "vulnerability_rank": parse_int(
-            row.get("Vulnerability Rank") or row.get("Vulnerability_Rank")
-        ),
-        "readiness_score": parse_float(
-            row.get("Readiness") or row.get("Readiness Score")
-        ),
-        "readiness_rank": parse_int(
-            row.get("Readiness Rank") or row.get("Readiness_Rank")
-        ),
-        "overall_score": parse_float(
-            row.get("Overall Score") or row.get("GAIN Score")
-        ),
-        "overall_rank": parse_int(
-            row.get("Overall Rank") or row.get("GAIN Rank")
-        ),
-        "region": normalize_text(row.get("Region") or row.get("region")),
-        "income_group": normalize_text(row.get("Income Group") or row.get("Income Level")),
-    }
-
-
-def fetch_gain_rows() -> list[dict]:
-    csv_rows = read_csv_rows()
-    records = [parse_gain_row(row) for row in csv_rows]
-    return [record for record in records if record["country_code"] and record["year"]]
+    return records
 
 
 def save_records(conn, records: list[dict]) -> None:
@@ -131,46 +123,23 @@ def save_records(conn, records: list[dict]) -> None:
         cursor.executemany(
             """
             INSERT INTO raw.raw_gain (
-                country_code,
-                country_name,
-                year,
-                vulnerability_score,
-                vulnerability_rank,
-                readiness_score,
-                readiness_rank,
-                overall_score,
-                overall_rank,
-                region,
-                income_group
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                country_code, country_name, year,
+                vulnerability_score, readiness_score, overall_score
+            ) VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (country_code, year)
             DO UPDATE SET
-                country_name = EXCLUDED.country_name,
+                country_name        = EXCLUDED.country_name,
                 vulnerability_score = EXCLUDED.vulnerability_score,
-                vulnerability_rank = EXCLUDED.vulnerability_rank,
-                readiness_score = EXCLUDED.readiness_score,
-                readiness_rank = EXCLUDED.readiness_rank,
-                overall_score = EXCLUDED.overall_score,
-                overall_rank = EXCLUDED.overall_rank,
-                region = EXCLUDED.region,
-                income_group = EXCLUDED.income_group,
-                updated_at = NOW();
+                readiness_score     = EXCLUDED.readiness_score,
+                overall_score       = EXCLUDED.overall_score,
+                updated_at          = NOW();
             """,
             [
                 (
-                    record["country_code"],
-                    record["country_name"],
-                    record["year"],
-                    record["vulnerability_score"],
-                    record["vulnerability_rank"],
-                    record["readiness_score"],
-                    record["readiness_rank"],
-                    record["overall_score"],
-                    record["overall_rank"],
-                    record["region"],
-                    record["income_group"],
+                    r["country_code"], r["country_name"], r["year"],
+                    r["vulnerability_score"], r["readiness_score"], r["overall_score"],
                 )
-                for record in records
+                for r in records
             ],
         )
 
@@ -178,7 +147,7 @@ def save_records(conn, records: list[dict]) -> None:
 
 
 def run_ingestion() -> None:
-    records = fetch_gain_rows()
+    records = fetch_gain_records()
     if not records:
         print("No ND-GAIN records found.")
         return
@@ -187,3 +156,7 @@ def run_ingestion() -> None:
         save_records(conn, records)
 
     print("ND-GAIN ingestion complete.")
+
+
+if __name__ == "__main__":
+    run_ingestion()
