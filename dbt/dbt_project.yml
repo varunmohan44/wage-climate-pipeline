@@ -28,6 +28,11 @@ models:
     staging:
       materialized: view
       schema: staging
+      tags: ["staging"]
+
+    dimensions:
+      materialized: table
+      schema: dimensions
       tags: ["dimensions"]
 
     facts:
