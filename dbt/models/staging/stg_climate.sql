@@ -43,4 +43,4 @@ SELECT
     arable_land_pct,
     forest_area_pct,
     CURRENT_TIMESTAMP AS dbt_updated_at
-FROM pivoted;
+FROM pivoted
