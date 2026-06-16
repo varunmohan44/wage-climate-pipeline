@@ -1,0 +1,232 @@
+version: 2
+
+models:
+  - name: fct_labor_conditions
+    description: >
+      Wide analytical labor table. stg_labor is the spine — one row per country/year
+      where ILOSTAT has data. World Bank economic context, climate proxies, and
+      ND-GAIN vulnerability scores are left-joined; nulls are preserved so the
+      composite index can apply its own coverage thresholds.
+      Grain: (country_code, year).
+    columns:
+
+      - name: country_code
+        description: "ISO 3166-1 alpha-3 country code (from dim_countries)"
+        tests:
+          - not_null
+
+      - name: country_name
+        description: "Canonical country name (World Bank → ND-GAIN → ILOSTAT preference)"
+        tests:
+          - not_null
+
+      - name: year
+        description: "Calendar year of the ILOSTAT observation"
+        tests:
+          - not_null
+
+      - name: in_economic
+        description: "True if this country appears in the World Bank WDI pipeline"
+
+      - name: in_gain
+        description: "True if this country appears in the ND-GAIN pipeline"
+
+      - name: in_labor
+        description: "True if this country appears in the ILOSTAT pipeline (always true given the spine)"
+
+      # --- ILOSTAT labor indicators ---
+
+      - name: avg_nominal_earnings_total
+        description: "Average nominal earnings, all workers (EAR_EHRA_SEX_ECO_CUR_NB, SEX_T)"
+
+      - name: avg_nominal_earnings_male
+        description: "Average nominal earnings, male workers (EAR_EHRA_SEX_ECO_CUR_NB, SEX_M)"
+
+      - name: avg_nominal_earnings_female
+        description: "Average nominal earnings, female workers (EAR_EHRA_SEX_ECO_CUR_NB, SEX_F)"
+
+      - name: gender_wage_gap_pct
+        description: "Gender wage gap by occupation as a percentage (EAR_GGAP_OCU_RT)"
+
+      - name: informality_rate_total
+        description: "Informal employment rate, all workers (EMP_2IFL_SEX_RT, SEX_T)"
+
+      - name: informality_rate_male
+        description: "Informal employment rate, male workers (EMP_2IFL_SEX_RT, SEX_M)"
+
+      - name: informality_rate_female
+        description: "Informal employment rate, female workers (EMP_2IFL_SEX_RT, SEX_F)"
+
+      - name: total_employment_nb
+        description: "Total employment count across all statuses (EMP_2EMP_SEX_STE_NB, SEX_T, STE=_T)"
+
+      # --- World Bank economic context ---
+
+      - name: gdp_per_capita_usd
+        description: "GDP per capita in current USD (NY.GDP.PCAP.CD). Null when WB has no data for this country/year."
+
+      - name: poverty_headcount_ratio
+        description: "Poverty headcount ratio at $2.15/day as % of population (SI.POV.DDAY). Null when WB has no data."
+
+      - name: rural_population_pct
+        description: "Rural population as % of total (SP.RUR.TOTL.ZS). Null when WB has no data."
+
+      - name: oda_received_usd
+        description: "Net ODA received in current USD (DT.ODA.ALLD.CD). Null when WB has no data."
+
+      # --- World Bank climate proxies ---
+
+      - name: access_to_electricity_pct
+        description: "Access to electricity as % of population (EG.ELC.ACCS.ZS). Adaptation capacity proxy."
+
+      - name: freshwater_withdrawal_pct_internal_resources
+        description: "Freshwater withdrawal as % of internal resources (ER.H2O.FWTL.ZS). Water stress proxy."
+
+      - name: precipitation_mm
+        description: "Annual precipitation in millimeters (AG.LND.PRCP.MM). Climate exposure signal."
+
+      - name: arable_land_pct
+        description: "Arable land as % of land area (AG.LND.ARBL.ZS). Agricultural climate vulnerability."
+
+      - name: forest_area_pct
+        description: "Forest area as % of land area (AG.LND.FRST.ZS). Ecological resilience buffer."
+
+      # --- ND-GAIN structural vulnerability ---
+
+      - name: gain_vulnerability_score
+        description: "ND-GAIN country vulnerability score. Higher = more vulnerable."
+
+      - name: gain_vulnerability_rank
+        description: "ND-GAIN vulnerability rank among all countries."
+
+      - name: gain_readiness_score
+        description: "ND-GAIN adaptive readiness score. Higher = more ready."
+
+      - name: gain_readiness_rank
+        description: "ND-GAIN readiness rank among all countries."
+
+      - name: gain_overall_score
+        description: "ND-GAIN overall adaptation score (readiness minus vulnerability)."
+
+      - name: gain_overall_rank
+        description: "ND-GAIN overall adaptation rank among all countries."
+
+      - name: region
+        description: "Geographic region assigned by ND-GAIN. Useful for dashboard filtering."
+
+      - name: income_group
+        description: "Income group assigned by ND-GAIN. Useful for developing-country segmentation."
+
+      - name: dbt_updated_at
+        description: "Timestamp this row was last processed by dbt"
+        tests:
+          - not_null
+
+    tests:
+      - unique_country_year
+
+  - name: fct_wage_climate_vulnerability
+    description: >
+      Composite country-level wage-climate vulnerability index. The main pipeline output.
+      Each of six components is normalized to [0,1] via PERCENT_RANK() within year so
+      countries are ranked relative to peers in the same year. Higher score = higher
+      vulnerability. The composite is the mean of non-null components; rows with fewer
+      than 2 contributing components are excluded. Grain: (country_code, year).
+    columns:
+
+      - name: country_code
+        description: "ISO 3166-1 alpha-3 country code"
+        tests:
+          - not_null
+
+      - name: country_name
+        description: "Canonical country name"
+        tests:
+          - not_null
+
+      - name: year
+        description: "Calendar year of observation"
+        tests:
+          - not_null
+
+      - name: region
+        description: "Geographic region (from ND-GAIN). Null when ND-GAIN has no data."
+
+      - name: income_group
+        description: "Income group (from ND-GAIN). Useful for developing-country filtering."
+
+      - name: vulnerability_index
+        description: >
+          Composite vulnerability score in [0,1]. Mean of normalized component scores
+          for the components that are non-null. Higher = more vulnerable.
+
+      - name: components_used
+        description: "Number of the six components that contributed to vulnerability_index (max 6)."
+
+      - name: vulnerability_tier
+        description: "High (>=0.66) / Medium (>=0.33) / Low (<0.33) classification of vulnerability_index."
+
+      - name: wage_depression_score
+        description: "Normalized wage depression score [0,1]. 1 - percentile rank of avg_nominal_earnings_total within year."
+
+      - name: informality_score
+        description: "Normalized informality score [0,1]. Percentile rank of informality_rate_total within year."
+
+      - name: gender_gap_score
+        description: "Normalized gender wage gap score [0,1]. Percentile rank of gender_wage_gap_pct within year."
+
+      - name: poverty_score
+        description: "Normalized poverty score [0,1]. Percentile rank of poverty_headcount_ratio within year."
+
+      - name: climate_exposure_score
+        description: "Normalized climate exposure score [0,1]. Percentile rank of gain_vulnerability_score within year."
+
+      - name: low_readiness_score
+        description: "Normalized low-readiness score [0,1]. 1 - percentile rank of gain_readiness_score within year."
+
+      - name: avg_nominal_earnings_total
+        description: "Raw average nominal earnings, all workers (from fct_labor_conditions)."
+
+      - name: informality_rate_total
+        description: "Raw informal employment rate, all workers (from fct_labor_conditions)."
+
+      - name: gender_wage_gap_pct
+        description: "Raw gender wage gap percentage (from fct_labor_conditions)."
+
+      - name: poverty_headcount_ratio
+        description: "Raw poverty headcount ratio at $2.15/day (from fct_labor_conditions)."
+
+      - name: gain_vulnerability_score
+        description: "Raw ND-GAIN vulnerability score (from fct_labor_conditions)."
+
+      - name: gain_readiness_score
+        description: "Raw ND-GAIN readiness score (from fct_labor_conditions)."
+
+      - name: gdp_per_capita_usd
+        description: "Raw GDP per capita in current USD (from fct_labor_conditions)."
+
+      - name: access_to_electricity_pct
+        description: "Raw access to electricity % (from fct_labor_conditions)."
+
+      - name: precipitation_mm
+        description: "Raw annual precipitation in mm (from fct_labor_conditions)."
+
+      - name: freshwater_withdrawal_pct_internal_resources
+        description: "Raw freshwater withdrawal % of internal resources (from fct_labor_conditions)."
+
+      - name: in_economic
+        description: "True if this country is covered by the World Bank WDI pipeline."
+
+      - name: in_gain
+        description: "True if this country is covered by the ND-GAIN pipeline."
+
+      - name: in_labor
+        description: "True if this country is covered by the ILOSTAT pipeline."
+
+      - name: dbt_updated_at
+        description: "Timestamp this row was last processed by dbt"
+        tests:
+          - not_null
+
+    tests:
+      - unique_country_year
