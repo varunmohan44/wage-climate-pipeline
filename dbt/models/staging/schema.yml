@@ -39,6 +39,9 @@ models:
         tests:
           - not_null
 
+    tests:
+      - unique_country_year
+
   - name: stg_climate
     description: "Staging model for World Bank climate proxy indicators."
     columns:
@@ -66,6 +69,11 @@ models:
         description: "Forest area as % of land area (AG.LND.FRST.ZS). Ecological resilience and land-use buffer."
       - name: dbt_updated_at
         description: "Timestamp this row was last processed by dbt"
+        tests:
+          - not_null
+
+    tests:
+      - unique_country_year
 
   - name: stg_gain
     description: "Staging model for ND-GAIN vulnerability and readiness scores."
@@ -154,3 +162,6 @@ models:
         description: "Timestamp this row was last processed by dbt"
         tests:
           - not_null
+
+    tests:
+      - unique_country_year

@@ -14,6 +14,9 @@ models:
         description: "ISO 3166-1 alpha-3 country code (from dim_countries)"
         tests:
           - not_null
+          - relationships:
+              to: ref('dim_countries')
+              field: country_code
 
       - name: country_name
         description: "Canonical country name (World Bank → ND-GAIN → ILOSTAT preference)"
@@ -138,6 +141,9 @@ models:
         description: "ISO 3166-1 alpha-3 country code"
         tests:
           - not_null
+          - relationships:
+              to: ref('dim_countries')
+              field: country_code
 
       - name: country_name
         description: "Canonical country name"
@@ -159,12 +165,23 @@ models:
         description: >
           Composite vulnerability score in [0,1]. Mean of normalized component scores
           for the components that are non-null. Higher = more vulnerable.
+        tests:
+          - is_between:
+              min_value: 0
+              max_value: 1
 
       - name: components_used
         description: "Number of the six components that contributed to vulnerability_index (max 6)."
+        tests:
+          - is_between:
+              min_value: 2
+              max_value: 6
 
       - name: vulnerability_tier
         description: "High (>=0.66) / Medium (>=0.33) / Low (<0.33) classification of vulnerability_index."
+        tests:
+          - accepted_values:
+              values: ['High', 'Medium', 'Low']
 
       - name: wage_depression_score
         description: "Normalized wage depression score [0,1]. 1 - percentile rank of avg_nominal_earnings_total within year."
