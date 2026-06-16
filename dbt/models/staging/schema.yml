@@ -6,6 +6,17 @@ models:
       Pivoted World Bank WDI data. Wide format — one row per country/year
       with each indicator as its own column. Nulls are intentionally retained;
       filtering occurs at the fact layer. Grain: (country_code, year).
+
+      Data quality notes: gdp_per_capita_usd and rural_population_pct have broad
+      coverage (~95% of countries for recent years). poverty_headcount_ratio is
+      survey-based and sparse — most countries report every 3–5 years, so long null
+      runs between survey years are expected. oda_received_usd is null for high-income
+      countries that do not receive aid.
+    meta:
+      owner: pipeline
+      domain: economic
+      update_cadence: annual
+      source: World Bank WDI API
     columns:
 
       - name: country_code
@@ -25,22 +36,53 @@ models:
 
       - name: gdp_per_capita_usd
         description: "GDP per capita in current USD (NY.GDP.PCAP.CD). Null when WB has no data."
+        meta:
+          coverage: high
+          notes: "Reliable for most countries from 1990 onward."
 
       - name: poverty_headcount_ratio
         description: "Poverty headcount ratio at $2.15/day as % of population (SI.POV.DDAY). Null when WB has no data."
+        meta:
+          coverage: low
+          notes: >
+            Survey-based. Most countries report every 3–5 years; long null runs between
+            surveys are normal and expected. Do not interpret null as zero.
 
       - name: rural_population_pct
         description: "Rural population as % of total population (SP.RUR.TOTL.ZS). Null when WB has no data."
+        meta:
+          coverage: high
 
       - name: oda_received_usd
         description: "Net official development assistance received in current USD (DT.ODA.ALLD.CD). Null when WB has no data."
+        meta:
+          coverage: medium
+          notes: "Null for high-income countries that do not receive ODA. Not a data gap."
+
       - name: dbt_updated_at
         description: "Timestamp this row was last processed by dbt"
         tests:
           - not_null
 
+    tests:
+      - unique_country_year
+
   - name: stg_climate
-    description: "Staging model for World Bank climate proxy indicators."
+    description: >
+      World Bank climate proxy indicators, pivoted to wide format. Drawn from the same
+      raw_economic table as stg_economic but filtered to climate-relevant indicator codes.
+      Grain: (country_code, year).
+
+      Data quality notes: access_to_electricity_pct and forest_area_pct have broad
+      coverage. freshwater_withdrawal_pct_internal_resources is computed from modeled
+      estimates and can exceed 100 in water-stressed regions — this is a known
+      characteristic of the indicator, not a data error. precipitation_mm is a
+      country-level average and smooths sub-national climate variability.
+    meta:
+      owner: pipeline
+      domain: climate
+      update_cadence: annual
+      source: World Bank WDI API
     columns:
       - name: country_code
         description: "ISO 3166-1 alpha-3 country code"
@@ -56,19 +98,50 @@ models:
           - not_null
       - name: access_to_electricity_pct
         description: "Access to electricity as a share of population (EG.ELC.ACCS.ZS). Proxy for adaptation capacity and infrastructure resilience."
+        meta:
+          coverage: high
       - name: freshwater_withdrawal_pct_internal_resources
         description: "Freshwater withdrawal as % of internal water resources (ER.H2O.FWTL.ZS). Proxy for water stress and climate vulnerability."
+        meta:
+          coverage: medium
+          notes: "Values >100 are valid — they indicate withdrawal exceeds renewable internal resources (water import or fossil groundwater)."
       - name: precipitation_mm
         description: "Annual precipitation in millimeters (AG.LND.PRCP.MM). Climate exposure signal."
+        meta:
+          coverage: high
+          notes: "Country-level average. Does not capture sub-national drought patterns."
       - name: arable_land_pct
         description: "Arable land as % of land area (AG.LND.ARBL.ZS). Agricultural vulnerability / climate-sensitive land dependence."
+        meta:
+          coverage: high
       - name: forest_area_pct
         description: "Forest area as % of land area (AG.LND.FRST.ZS). Ecological resilience and land-use buffer."
+        meta:
+          coverage: high
       - name: dbt_updated_at
         description: "Timestamp this row was last processed by dbt"
+        tests:
+          - not_null
+
+    tests:
+      - unique_country_year
 
   - name: stg_gain
-    description: "Staging model for ND-GAIN vulnerability and readiness scores."
+    description: >
+      ND-GAIN country vulnerability and readiness scores. Slowly changing dimension —
+      scores are updated annually but reflect structural characteristics that shift
+      gradually. Grain: (country_code, year).
+
+      Data quality notes: ND-GAIN covers ~185 countries back to 1995. Scores are
+      composite indices themselves (sub-indices for food, water, health, ecosystem,
+      habitat, infrastructure for vulnerability; economic, governance, social for
+      readiness). Changes year-over-year are typically small; large swings in a single
+      year may indicate a data revision rather than a real shock.
+    meta:
+      owner: pipeline
+      domain: climate
+      update_cadence: annual
+      source: ND-GAIN Country Index (Notre Dame Global Adaptation Initiative)
     columns:
       - name: country_code
         description: "ISO 3166-1 alpha-3 country code"
@@ -83,21 +156,33 @@ models:
         tests:
           - not_null
       - name: vulnerability_score
-        description: "ND-GAIN vulnerability score"
+        description: "ND-GAIN vulnerability score (0–1). Higher = more exposed and sensitive to climate impacts with less capacity to cope."
+        meta:
+          coverage: high
       - name: vulnerability_rank
-        description: "ND-GAIN vulnerability rank"
+        description: "ND-GAIN vulnerability rank among all countries in that year. Lower rank = more vulnerable."
+        meta:
+          coverage: high
       - name: readiness_score
-        description: "ND-GAIN readiness score"
+        description: "ND-GAIN readiness score (0–1). Higher = greater capacity to leverage investment for adaptation."
+        meta:
+          coverage: high
       - name: readiness_rank
-        description: "ND-GAIN readiness rank"
+        description: "ND-GAIN readiness rank among all countries in that year."
+        meta:
+          coverage: high
       - name: overall_score
-        description: "ND-GAIN overall adaptation score"
+        description: "ND-GAIN overall adaptation score (readiness minus vulnerability, rescaled). Higher = better adaptation position."
+        meta:
+          coverage: high
       - name: overall_rank
-        description: "ND-GAIN overall adaptation rank"
+        description: "ND-GAIN overall adaptation rank. Lower rank = better adaptation position."
+        meta:
+          coverage: high
       - name: region
-        description: "Geographic region assigned by ND-GAIN"
+        description: "Geographic region assigned by ND-GAIN."
       - name: income_group
-        description: "Income group assigned by ND-GAIN"
+        description: "World Bank income group assigned by ND-GAIN. Useful for developing-country cohort analysis."
       - name: dbt_updated_at
         description: "Timestamp this row was last processed by dbt"
 
@@ -109,6 +194,20 @@ models:
       Pivoted ILOSTAT labor data. Wide format — one row per country/year with each
       indicator×sex combination as its own column. Nulls are intentionally retained;
       filtering occurs at the fact layer. Grain: (country_code, year).
+
+      Data quality notes: ILOSTAT coverage for developing countries is uneven.
+      avg_nominal_earnings is the sparsest column — many low-income countries either
+      do not conduct wage surveys or do not report to ILO, so null rates of 60–70%
+      for this column among developing-country rows are normal. informality_rate has
+      broader coverage (~50% of country-years). gender_wage_gap_pct is derived from
+      occupation-level data and is sparse for countries without detailed labor surveys.
+      All values reflect the total economy (economic_activity = total); sectoral
+      breakdowns are excluded at ingestion.
+    meta:
+      owner: pipeline
+      domain: labor
+      update_cadence: monthly (ILOSTAT releases)
+      source: ILOSTAT SDMX API
     columns:
 
       - name: country_code
@@ -128,29 +227,51 @@ models:
 
       - name: avg_nominal_earnings_total
         description: "Average nominal earnings, all workers (EAR_EHRA_SEX_ECO_CUR_NB, SEX_T). Null when ILO has no data."
+        meta:
+          coverage: low
+          notes: "Sparse for low-income countries. Null rates of 60–70% among developing-country rows are expected."
 
       - name: avg_nominal_earnings_male
         description: "Average nominal earnings, male workers (EAR_EHRA_SEX_ECO_CUR_NB, SEX_M). Null when ILO has no data."
+        meta:
+          coverage: low
 
       - name: avg_nominal_earnings_female
         description: "Average nominal earnings, female workers (EAR_EHRA_SEX_ECO_CUR_NB, SEX_F). Null when ILO has no data."
+        meta:
+          coverage: low
 
       - name: gender_wage_gap_pct
         description: "Gender wage gap by occupation as a percentage (EAR_GGAP_OCU_RT). Null when ILO has no data."
+        meta:
+          coverage: low
+          notes: "Derived from occupation-level data. Requires detailed labor force surveys; absent for many developing countries."
 
       - name: informality_rate_total
         description: "Informal employment rate, all workers (EMP_2IFL_SEX_RT, SEX_T). Null when ILO has no data."
+        meta:
+          coverage: medium
+          notes: "Better coverage than earnings data. ILO modeled estimates fill some gaps for countries without direct surveys."
 
       - name: informality_rate_male
         description: "Informal employment rate, male workers (EMP_2IFL_SEX_RT, SEX_M). Null when ILO has no data."
+        meta:
+          coverage: medium
 
       - name: informality_rate_female
         description: "Informal employment rate, female workers (EMP_2IFL_SEX_RT, SEX_F). Null when ILO has no data."
+        meta:
+          coverage: medium
 
       - name: total_employment_nb
         description: "Total employment count across all statuses (EMP_2EMP_SEX_STE_NB, SEX_T, STE=_T). Null when ILO has no data."
+        meta:
+          coverage: medium
 
       - name: dbt_updated_at
         description: "Timestamp this row was last processed by dbt"
         tests:
           - not_null
+
+    tests:
+      - unique_country_year

@@ -8,6 +8,16 @@ models:
       ND-GAIN vulnerability scores are left-joined; nulls are preserved so the
       composite index can apply its own coverage thresholds.
       Grain: (country_code, year).
+
+      Data quality notes: every row is guaranteed to have at least one ILOSTAT
+      observation, but that may be only informality_rate with all earnings columns
+      null. The in_economic / in_gain / in_labor flags reflect country-level pipeline
+      coverage, not year-level coverage — a country with in_economic=true can still
+      have null economic columns for years where WB has no observation.
+    meta:
+      owner: pipeline
+      domain: labor
+      update_cadence: monthly
     columns:
 
       - name: country_code
@@ -132,6 +142,19 @@ models:
       countries are ranked relative to peers in the same year. Higher score = higher
       vulnerability. The composite is the mean of non-null components; rows with fewer
       than 2 contributing components are excluded. Grain: (country_code, year).
+
+      Data quality notes: components_used indicates how many of the six components
+      contributed to a row's vulnerability_index. Scores built from 2–3 components
+      are less reliable than those built from 5–6; filter on components_used >= 4
+      for higher-confidence analysis. Scores are relative within year, not comparable
+      across years — a score of 0.8 in 2005 and 0.8 in 2020 do not imply the same
+      absolute conditions, only that the country ranked similarly among peers in each
+      year. Raw indicator values are retained alongside normalized scores to support
+      decomposition and sanity-checking.
+    meta:
+      owner: pipeline
+      domain: composite-index
+      update_cadence: monthly
     columns:
 
       - name: country_code
