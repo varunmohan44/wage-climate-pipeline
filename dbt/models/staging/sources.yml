@@ -14,6 +14,10 @@ sources:
 
       - name: raw_economic
         description: "World Bank WDI indicators. One row per country, indicator, year. Loaded by dag_ingest_economic."
+        loaded_at_field: updated_at
+        freshness:
+          warn_after: {count: 8, period: day}
+          error_after: {count: 30, period: day}
         columns:
           - name: country_code
             description: "ISO 3166-1 alpha-3 country code"
@@ -34,6 +38,10 @@ sources:
 
       - name: raw_labor
         description: "ILOSTAT wage and labor indicators. One row per country, indicator, sex, economic activity, status in employment, year. Loaded by dag_ingest_ilostat."
+        loaded_at_field: updated_at
+        freshness:
+          warn_after: {count: 8, period: day}
+          error_after: {count: 30, period: day}
         columns:
           - name: country_code
             description: "ISO 3166-1 alpha-3 country code"
