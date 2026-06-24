@@ -5,8 +5,6 @@ from utils import run_query
 st.title("Wage-Climate Vulnerability Index")
 st.caption("Which developing countries are caught in cycles where climate stress worsens wages and deteriorates labor markets?")
 
-# Fetch the latest year that has full-coverage data (>= 4 components) once,
-# then reuse it in all subsequent queries to avoid repeating the subquery.
 latest_year_df = run_query("""
     select max(year) as year
     from dev_facts.fct_wage_climate_vulnerability

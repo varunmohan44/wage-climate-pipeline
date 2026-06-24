@@ -5,10 +5,10 @@ import pandas as pd
 import streamlit as st
 
 DB_CONFIG = {
-    "host":     os.getenv("PIPELINE_DB_HOST", "localhost"),
-    "port":     int(os.getenv("PIPELINE_DB_PORT", "5433")),
+    "host": os.getenv("PIPELINE_DB_HOST", "localhost"),
+    "port": int(os.getenv("PIPELINE_DB_PORT", "5433")),
     "database": os.getenv("PIPELINE_DB_NAME", "pipeline"),
-    "user":     os.getenv("PIPELINE_DB_USER", "pipeline"),
+    "user": os.getenv("PIPELINE_DB_USER", "pipeline"),
     "password": os.getenv("PIPELINE_DB_PASSWORD", "pipeline"),
 }
 

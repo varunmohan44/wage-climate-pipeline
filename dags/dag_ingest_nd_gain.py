@@ -1,4 +1,4 @@
-"""Airflow DAG for ND-GAIN vulnerability ingestion."""
+# Airflow DAG for ND-GAIN vulnerability ingestion.
 
 from datetime import datetime, timedelta
 

@@ -1,4 +1,4 @@
-"""Fetches World Bank indicators and saves them to Postgres."""
+# Fetches World Bank indicators and saves them to Postgres.
 
 import os
 import time

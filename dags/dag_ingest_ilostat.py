@@ -1,4 +1,4 @@
-"""Airflow DAG for ILOSTAT wage and labor indicator ingestion."""
+# Airflow DAG for ILOSTAT wage and labor indicator ingestion.
 
 from datetime import datetime, timedelta
 
