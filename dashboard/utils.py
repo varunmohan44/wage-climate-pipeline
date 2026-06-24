@@ -12,6 +12,8 @@ DB_CONFIG = {
     "password": os.getenv("PIPELINE_DB_PASSWORD", "pipeline"),
 }
 
+VULN_TABLE = "dev_facts.fct_wage_climate_vulnerability"
+
 @st.cache_data(ttl=300)
 def run_query(sql, params=None):
     conn = psycopg2.connect(**DB_CONFIG)

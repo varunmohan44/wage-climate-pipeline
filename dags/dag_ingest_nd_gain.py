@@ -1,20 +1,12 @@
 # Airflow DAG for ND-GAIN vulnerability ingestion.
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from airflow.sdk import DAG
 from airflow.operators.python import PythonOperator
 
+from config import DEFAULT_ARGS
 from ingestion.nd_gain_ingestion import run_ingestion
-
-DEFAULT_ARGS = {
-    "owner": "varun",
-    "depends_on_past": False,
-    "retries": 2,
-    "retry_delay": timedelta(minutes=5),
-    "email_on_failure": False,
-    "email_on_retry": False,
-}
 
 with DAG(
     dag_id="dag_ingest_nd_gain",

@@ -68,5 +68,3 @@ sources:
       - name: raw_gain
         description: "ND-GAIN country vulnerability and readiness scores loaded by dag_ingest_nd_gain."
 
-      # - name: raw_vulnerability
-      #   description: "ND-GAIN country vulnerability and readiness scores"

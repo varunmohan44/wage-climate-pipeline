@@ -1,20 +1,20 @@
 import streamlit as st
 import plotly.express as px
-from utils import run_query
+from utils import run_query, VULN_TABLE
 
 st.title("Vulnerability Trends Over Time")
 st.caption("How has wage-climate vulnerability shifted across countries and regions since 2000?")
 
 st.subheader("Global Average Trend")
 
-global_trend = run_query("""
+global_trend = run_query(f"""
     select
         year,
         round(avg(vulnerability_index)::numeric, 3)                                                    as avg_vulnerability,
         round(percentile_cont(0.9) within group (order by vulnerability_index)::numeric, 3)            as p90_vulnerability,
         round(percentile_cont(0.1) within group (order by vulnerability_index)::numeric, 3)            as p10_vulnerability,
         count(distinct country_code)                                                                    as countries
-    from dev_facts.fct_wage_climate_vulnerability
+    from {VULN_TABLE}
     where components_used >= 4
       and year >= 2000
     group by year
@@ -32,10 +32,10 @@ st.plotly_chart(fig1, use_container_width=True)
 st.divider()
 st.subheader("Top 10 Most Vulnerable Countries Over Time")
 
-top_countries = run_query("""
+top_countries = run_query(f"""
     with top_10 as (
         select country_name
-        from dev_facts.fct_wage_climate_vulnerability
+        from {VULN_TABLE}
         where components_used >= 4
         group by country_name
         having count(*) >= 10
@@ -44,7 +44,7 @@ top_countries = run_query("""
     )
     select f.year, f.country_name,
         round(f.vulnerability_index::numeric, 3) as vulnerability_index
-    from dev_facts.fct_wage_climate_vulnerability f
+    from {VULN_TABLE} f
     join top_10 t on f.country_name = t.country_name
     where f.components_used >= 4
       and f.year >= 2000
@@ -61,14 +61,14 @@ st.plotly_chart(fig2, use_container_width=True)
 st.divider()
 st.subheader("Most Consistently Vulnerable Countries")
 
-persistent = run_query("""
+persistent = run_query(f"""
     select
         country_name,
         round(avg(vulnerability_index)::numeric, 3)  as avg_vulnerability,
         round(min(vulnerability_index)::numeric, 3)  as best_year,
         round(max(vulnerability_index)::numeric, 3)  as worst_year,
         count(*)                                      as years_with_data
-    from dev_facts.fct_wage_climate_vulnerability
+    from {VULN_TABLE}
     where components_used >= 4
     group by country_name
     having count(*) >= 10
