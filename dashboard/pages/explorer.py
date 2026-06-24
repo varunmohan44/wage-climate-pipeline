@@ -1,17 +1,14 @@
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
 import streamlit as st
 import plotly.express as px
 import pandas as pd
-from utils import run_query
+from utils import run_query, VULN_TABLE
 
 st.title("Component Explorer")
 st.caption("What drives vulnerability? Break down the six index components for any country.")
 
-countries = run_query("""
+countries = run_query(f"""
     select distinct country_name
-    from dev_facts.fct_wage_climate_vulnerability
+    from {VULN_TABLE}
     where components_used >= 4
     order by country_name
 """)
@@ -20,7 +17,7 @@ default_idx = list(countries["country_name"]).index("Nigeria") if "Nigeria" in c
 country = st.selectbox("Select a country", countries["country_name"], index=default_idx)
 
 timeseries = run_query(
-    """
+    f"""
     select
         year,
         round(vulnerability_index::numeric, 3)      as vulnerability_index,
@@ -31,7 +28,7 @@ timeseries = run_query(
         round(climate_exposure_score::numeric, 3)   as climate_exposure,
         round(low_readiness_score::numeric, 3)      as low_readiness,
         components_used
-    from dev_facts.fct_wage_climate_vulnerability
+    from {VULN_TABLE}
     where country_name = %s
       and components_used >= 2
     order by year
@@ -71,15 +68,15 @@ if not timeseries.empty:
 st.divider()
 st.subheader("Informality vs. Vulnerability (Latest Year, All Countries)")
 
-scatter = run_query("""
+scatter = run_query(f"""
     select
         country_name,
         region,
         round(informality_rate_total::numeric, 1)   as informality_rate_pct,
         round(vulnerability_index::numeric, 3)       as vulnerability_index,
         vulnerability_tier
-    from dev_facts.fct_wage_climate_vulnerability
-    where year = (select max(year) from dev_facts.fct_wage_climate_vulnerability)
+    from {VULN_TABLE}
+    where year = (select max(year) from {VULN_TABLE})
       and components_used >= 4
       and informality_rate_total is not null
     order by vulnerability_index desc

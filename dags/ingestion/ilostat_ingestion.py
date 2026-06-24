@@ -1,8 +1,9 @@
+# Fetches ilostat indicators and saves them to Postgres.
+
 import os
 import requests
 import psycopg2
 
-# config
 INDICATORS = [
     ("EAR_EHRA_SEX_ECO_CUR_NB", "Average nominal earnings by sex and economic activity"),
     ("EAR_GGAP_OCU_RT", "Gender wage gap by occupation"),
@@ -56,7 +57,6 @@ def fetch_indicator(indicator_code: str) -> list[dict]:
         print(f"  No data returned for {indicator_code}.")
         return []
 
-    # map dimensions
     records = []
     if dataset.get("series"):
         dim_lookup = [{i: v["id"] for i, v in enumerate(d["values"])} for d in series_dims]

@@ -1,4 +1,4 @@
-"""Fetches World Bank indicators and saves them to Postgres."""
+# Fetches World Bank indicators and saves them to Postgres.
 
 import os
 import time
@@ -34,7 +34,6 @@ def get_connection():
 
 
 def fetch_valid_country_iso3() -> set:
-    """Return the set of valid ISO3 country codes from the World Bank country list."""
     response = requests.get(
         "https://api.worldbank.org/v2/country",
         params={"format": "json", "per_page": 500, "type": "country"},

@@ -1,6 +1,6 @@
 <h3>Developing World Wage & Labor Vulnerability Pipeline</h3>
 
-<p>A data engineering pipeline that tracks how climate shocks, food insecurity, and structural vulnerability translate into wage depression and labor market deterioration in developing countries. <br /> <a href="#about-the-project"><strong>Explore the docs »</strong></a> <br /><br /> <a href="#roadmap">View Roadmap</a> · <a href="https://github.com/YOUR_USERNAME/YOUR_REPO_NAME/issues/new?labels=bug">Report Bug</a> · <a href="https://github.com/YOUR_USERNAME/YOUR_REPO_NAME/issues/new?labels=enhancement">Request Feature</a></p>
+<p>A data engineering pipeline that tracks how climate shocks, food insecurity, and structural vulnerability translate into wage depression and labor market deterioration in developing countries. <br /> <a href="#about-the-project"><strong>Explore the docs »</strong></a> <br /><br /> <a href="#roadmap">View Roadmap</a> · <a href="https://github.com/varunmohan44/wage-climate-pipeline/issues/new?labels=bug">Report Bug</a> · <a href="https://github.com/varunmohan44/wage-climate-pipeline/issues/new?labels=enhancement">Request Feature</a></p>
 
 ------------------------------------------------------------------------
 
@@ -30,183 +30,185 @@ Climate and food signals are the explanatory variables. Wages and labor conditio
 
 This project fuses multiple publicly available datasets to produce that index. Specifically I join ILOSTAT wage data with World Bank indicators and ND-GAIN vulnerability scores.
 
-</p>
-
-
 ### Built With
 
-[![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=for-the-badge&logo=apacheairflow&logoColor=white)](https://airflow.apache.org/) [![dbt](https://img.shields.io/badge/dbt-FF694B?style=for-the-badge&logo=dbt&logoColor=white)](https://www.getdbt.com/) [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/) [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/) [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-
-</p>
+[![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=for-the-badge&logo=apacheairflow&logoColor=white)](https://airflow.apache.org/) [![dbt](https://img.shields.io/badge/dbt-FF694B?style=for-the-badge&logo=dbt&logoColor=white)](https://www.getdbt.com/) [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/) [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/) [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/) [![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
 
 ------------------------------------------------------------------------
 
 ## Getting Started
 
-Follow these steps for a local copy.
-
 ### Prerequisites
 
 -   [Docker Desktop](https://www.docker.com/products/docker-desktop/)
--   PostgreSQL server (local or hosted) — Postgres 13+ recommended
--   A PostgreSQL database and user with privileges for the project
--   A connection string (DATABASE_URL) or separate connection details for dbt and Airflow
 -   Python 3.10+
+-   dbt Core (`pip install dbt-postgres`)
 
 ### Installation
-
-> **In Progress** — full setup instructions will be added as the pipeline is built.
 
 1.  Clone the repo
 
     ``` sh
-    git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-    cd YOUR_REPO_NAME
+    git clone https://github.com/varunmohan44/wage-climate-pipeline.git
+    cd wage-climate-pipeline
     ```
 
-2.  Copy the example environment file and fill in your credentials
+2.  Copy the example environment file
 
     ``` sh
     cp .env.example .env
     ```
 
-3.  Add your PostgreSQL connection to the project configuration
+    The defaults match the Docker Compose setup — no changes are required. ND-GAIN data is downloaded automatically when the DAG runs.
 
-    ``` sh
-    # Example: add to .env or export in your shell
-    DATABASE_URL=postgresql://db_user:db_password@localhost:5432/wage_climate
-    ```
-
-4.  Start Airflow with Docker Compose
+3.  Start Airflow and the pipeline database
 
     ``` sh
     docker compose up -d
     ```
 
-5.  Access the Airflow UI at `http://localhost:8080`
+    This starts two Postgres instances: one for Airflow metadata (`localhost:5432`) and one for pipeline data (`localhost:5433`).
 
-6.  Install dbt dependencies
+4.  Create the raw schema tables
+
+    ``` sh
+    psql postgresql://pipeline:pipeline@localhost:5433/pipeline -f sql/create_raw_labor.sql
+    psql postgresql://pipeline:pipeline@localhost:5433/pipeline -f sql/create_raw_economic.sql
+    psql postgresql://pipeline:pipeline@localhost:5433/pipeline -f sql/create_raw_gain.sql
+    ```
+
+5.  Trigger ingestion DAGs in the Airflow UI at `http://localhost:8080` (login: `airflow` / `airflow`)
+
+    Run these three DAGs in order or let them execute on their default schedules:
+    - `dag_ingest_economic` — World Bank WDI indicators
+    - `dag_ingest_ilostat` — ILOSTAT wages and labor conditions
+    - `dag_ingest_nd_gain` — ND-GAIN vulnerability and readiness scores
+
+6.  Run dbt to build the analytical models
 
     ``` sh
     cd dbt
-    dbt deps
-    dbt debug  # verify PostgreSQL connection
+    dbt run
+    dbt test
     ```
 
-</p>
+7.  Launch the dashboard
+
+    ``` sh
+    cd dashboard
+    pip install -r ../requirements.txt
+    streamlit run app.py
+    ```
+
+    Open `http://localhost:8501` in your browser.
 
 ------------------------------------------------------------------------
 
 ## Usage
 
-> **In Progress** — usage examples and screenshots will be added as the pipeline and dashboard are built.
+The pipeline produces a composite country-level index (`fct_wage_climate_vulnerability`) in the `dev_facts` schema, queryable directly in PostgreSQL or via the Streamlit dashboard.
 
-The pipeline produces a composite country-level index (`fct_wage_climate_vulnerability`) queryable directly in PostgreSQL or via the dashboard. The index tracks:
+The dashboard has three pages:
 
--   Real wage trends vs. drought severity (SPI)
--   Informality rate changes following food price shocks
--   Working poverty correlation with ND-GAIN vulnerability scores
--   Temporal lag structure between climate events and wage responses
+- **Overview** — top 20 most vulnerable countries in the latest year, with GDP and climate vulnerability scores, plus a tier distribution chart
+- **Trends** — global P10/average/P90 vulnerability over time (2000–present) and a per-country time series for the top 10 most consistently vulnerable countries
+- **Country Explorer** — select any country to view its composite index over time, component breakdown for the most recent year, and a scatter plot of informality vs. vulnerability
 
-</p>
+![Overview](screenshots/overview.png)
+![Trends](screenshots/trends.png)
+![Country Explorer](screenshots/explorer.png)
+
+**Data coverage notes:**
+- The composite index uses up to 6 components. Rows with fewer than 2 contributing components are excluded. Most countries with full coverage score 4–5 components.
+- `informality_rate_total` is currently unpopulated — ILO coverage for the informal employment indicator is sparse and was not ingested. This is a known gap.
+- `region` and `income_group` are stored in the schema but not yet populated. They come from the ND-GAIN CSV which does not include those fields directly.
 
 ------------------------------------------------------------------------
 
 ## Roadmap
 
--   Airflow DAG skeleton & Docker Compose setup
--   World Bank API ingestion (`stg_economic`)
--   ILOSTAT API ingestion (`stg_labor`)
- 
--   ND-GAIN CSV ingestion (`stg_gain`)
- 
--   `dim_countries` — ISO code reconciliation across all sources
--   `fct_labor_conditions` — wide-format analytical labor table
--   `fct_wage_climate_vulnerability` — composite index (main output)
--   dbt tests & data quality documentation
--   Dashboard (Metabase or Evidence.dev)
--   Full setup documentation
-
-</p>
+- [x] Airflow DAG skeleton & Docker Compose setup
+- [x] World Bank API ingestion (`stg_economic`, `stg_climate`)
+- [x] ILOSTAT API ingestion (`stg_labor`)
+- [x] ND-GAIN CSV ingestion (`stg_gain`)
+- [x] `dim_countries` — ISO code reconciliation across all sources
+- [x] `fct_labor_conditions` — wide-format analytical labor table
+- [x] `fct_wage_climate_vulnerability` — composite index (main output)
+- [x] dbt tests & data quality documentation
+- [x] Streamlit dashboard (Overview, Trends, Country Explorer)
+- [ ] Populate `region` and `income_group` from World Bank country metadata
+- [ ] Ingest informal employment rate (`EMP_2IFL_SEX_RT`) from ILOSTAT
 
 ------------------------------------------------------------------------
 
 ## Data Sources
 
-All five sources are fully automatable with no scraping required.
+All sources are fully automatable with no scraping required.
 
 | Source | Role | Cadence | Type |
 |----|----|----|----|
 | [ILOSTAT](https://ilostat.ilo.org/data/) | **Anchor** — wages, informality, working poverty, gender wage gap | Monthly | REST API |
 | [World Bank WDI](https://data.worldbank.org/) | Structural economic context (GDP, poverty headcount, rural pop, ODA) | Annual | REST API |
-| [World Bank WDI climate proxies](https://data.worldbank.org/) | Climate exposure/adaptation proxies such as electricity access, freshwater withdrawal, precipitation, arable land, and forest cover | Annual | REST API |
- 
-| [FAOSTAT](https://www.fao.org/faostat/) | Food insecurity (archived) | Annual | REST API |
-| [ND-GAIN](https://gain.nd.edu/our-work/country-index/) | Structural climate vulnerability & adaptive readiness (slowly changing dimension) | Annual | Static CSV |
+| [World Bank WDI climate proxies](https://data.worldbank.org/) | Climate exposure/adaptation proxies: electricity access, freshwater withdrawal, precipitation, arable land, forest cover | Annual | REST API |
+| [ND-GAIN](https://gain.nd.edu/our-work/country-index/) | Structural climate vulnerability & adaptive readiness | Annual | Static CSV |
 
-</p>
-
-> Note: ND-GAIN ingestion loads raw CSV data from `ND_GAIN_CSV_URL` or a local `ND_GAIN_CSV_PATH`.
-
+> ND-GAIN data is downloaded automatically from [gain.nd.edu](https://gain.nd.edu/our-work/country-index/download-data/) when the DAG runs. No manual download required.
 
 ------------------------------------------------------------------------
 
-## Pipeline Architecture {#pipeline-architecture}
+## Pipeline Architecture
 
-> **In Progress** - Preliminary pipeline architecture.
-
-```         
+```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                          Data Sources                               │
-│  ILOSTAT API │ World Bank API │ ND-GAIN  │
+│         ILOSTAT API   │   World Bank API   │   ND-GAIN CSV          │
 └──────────────────────────────┬──────────────────────────────────────┘
                                │ Airflow DAGs (Python)
 ┌──────────────────────────────▼──────────────────────────────────────┐
-│                      PostgreSQL — Raw Layer                          │
-│        raw_labor │ raw_economic │ raw_climate │ raw_food │ raw_gain │
+│                    PostgreSQL — Raw Layer (raw.*)                   │
+│          raw_labor  │  raw_economic  │  raw_gain                    │
 └──────────────────────────────┬──────────────────────────────────────┘
                                │ dbt Core
 ┌──────────────────────────────▼──────────────────────────────────────┐
-│                     dbt — Staging Layer                             │
-│stg_labor │ stg_economic │ stg_climate │ stg_food │ stg_gain│
+│                   dbt — Staging Layer (dev_staging.*)               │
+│       stg_labor  │  stg_economic  │  stg_climate  │  stg_gain       │
 └──────────────────────────────┬──────────────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────────────┐
-│                  dbt — Dimensions & Facts                           │
-│    dim_countries → fct_labor_conditions                             │
-│                  → fct_wage_climate_vulnerability  ← MAIN OUTPUT    │
+│               dbt — Dimensions & Facts                              │
+│   dim_countries → fct_labor_conditions                              │
+│                 → fct_wage_climate_vulnerability  ← MAIN OUTPUT     │
 └──────────────────────────────┬──────────────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────────────┐
-│                          Dashboard                                  │
-│                    Metabase / Evidence.dev                          │
+│                        Streamlit Dashboard                          │
+│               Overview  │  Trends  │  Country Explorer              │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
 ### dbt Model Structure
 
-```         
-models/
-├── staging/
-│   ├── stg_labor.sql            # ILOSTAT: pivoted to wide format
-│   ├── stg_economic.sql         # World Bank: GDP, poverty, ODA
-│   └── stg_gain.sql    # ND-GAIN: vulnerability & readiness scores
-├── dimensions/
-│   └── dim_countries.sql        # ISO code reconciliation (SCD)
-└── facts/
-    ├── fct_labor_conditions.sql
-    └── fct_wage_climate_vulnerability.sql
 ```
-
-</p>
+dbt/models/
+├── staging/
+│   ├── stg_labor.sql         # ILOSTAT: pivoted to wide format
+│   ├── stg_economic.sql      # World Bank: GDP, poverty, ODA
+│   ├── stg_climate.sql       # World Bank: climate exposure proxies
+│   └── stg_gain.sql          # ND-GAIN: vulnerability & readiness scores
+├── dimensions/
+│   └── dim_countries.sql     # ISO code reconciliation across sources
+└── facts/
+    ├── fct_labor_conditions.sql           # wide analytical labor table
+    └── fct_wage_climate_vulnerability.sql # composite index (main output)
+```
 
 ------------------------------------------------------------------------
 
 ## Contact
 
-Varun Mohan — [LinkedIn](https://linkedin.com/in/YOUR_HANDLE) — varunmohann\@gmail.com
+Varun Mohan — varunmohann@gmail.com
 
-Project Link: <https://github.com/YOUR_USERNAME/YOUR_REPO_NAME>
+Project Link: <https://github.com/varunmohan44/wage-climate-pipeline>
 
 ------------------------------------------------------------------------
 
@@ -214,7 +216,5 @@ Project Link: <https://github.com/YOUR_USERNAME/YOUR_REPO_NAME>
 
 -   [ILOSTAT — International Labour Organization](https://ilostat.ilo.org/)
 -   [World Bank Open Data](https://data.worldbank.org/)
- 
-    [ND-GAIN Country Index — Notre Dame Global Adaptation Initiative](https://gain.nd.edu/)
 -   [ND-GAIN Country Index — Notre Dame Global Adaptation Initiative](https://gain.nd.edu/)
 -   [shields.io](https://shields.io)

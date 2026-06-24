@@ -60,22 +60,22 @@ final AS (
         cl.forest_area_pct,
 
         -- structural vulnerability (ND-GAIN)
-        g.vulnerability_score       AS gain_vulnerability_score,
-        g.vulnerability_rank        AS gain_vulnerability_rank,
-        g.readiness_score           AS gain_readiness_score,
-        g.readiness_rank            AS gain_readiness_rank,
-        g.overall_score             AS gain_overall_score,
-        g.overall_rank              AS gain_overall_rank,
+        g.vulnerability_score AS gain_vulnerability_score,
+        g.vulnerability_rank AS gain_vulnerability_rank,
+        g.readiness_score AS gain_readiness_score,
+        g.readiness_rank AS gain_readiness_rank,
+        g.overall_score AS gain_overall_score,
+        g.overall_rank AS gain_overall_rank,
         g.region,
         g.income_group,
 
         CURRENT_TIMESTAMP AS dbt_updated_at
 
     FROM labor l
-    INNER JOIN countries c  ON l.country_code = c.country_code
-    LEFT JOIN  economic e   ON l.country_code = e.country_code AND l.year = e.year
-    LEFT JOIN  climate cl   ON l.country_code = cl.country_code AND l.year = cl.year
-    LEFT JOIN  gain g       ON l.country_code = g.country_code AND l.year = g.year
+    INNER JOIN countries c ON l.country_code = c.country_code
+    LEFT JOIN  economic e ON l.country_code = e.country_code AND l.year = e.year
+    LEFT JOIN  climate cl ON l.country_code = cl.country_code AND l.year = cl.year
+    LEFT JOIN  gain g ON l.country_code = g.country_code AND l.year = g.year
 )
 
 SELECT * FROM final

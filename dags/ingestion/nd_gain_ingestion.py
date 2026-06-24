@@ -1,11 +1,4 @@
-"""Fetches ND-GAIN vulnerability and readiness scores and writes them to Postgres.
-
-Data is published as a ZIP containing wide-format CSVs (ISO3, Name, 1995..2023).
-The three files we need are:
-  resources/gain/gain.csv                    -- overall GAIN score (0-100)
-  resources/vulnerability/vulnerability.csv  -- vulnerability score (0-1)
-  resources/readiness/readiness.csv          -- readiness score (0-1)
-"""
+# Fetches ND-GAIN vulnerability and readiness scores and writes them to Postgres.
 
 import csv
 import io
@@ -43,7 +36,6 @@ def _download_zip() -> bytes:
 
 
 def _parse_wide(zf: zipfile.ZipFile, member: str) -> dict[str, dict[str, float | None]]:
-    """Read a wide CSV and return {iso3: {year_str: value_or_None}}."""
     with zf.open(member) as raw:
         reader = csv.DictReader(io.TextIOWrapper(raw, encoding="utf-8"))
         result: dict[str, dict[str, float | None]] = {}
@@ -128,11 +120,11 @@ def save_records(conn, records: list[dict]) -> None:
             ) VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (country_code, year)
             DO UPDATE SET
-                country_name        = EXCLUDED.country_name,
+                country_name = EXCLUDED.country_name,
                 vulnerability_score = EXCLUDED.vulnerability_score,
-                readiness_score     = EXCLUDED.readiness_score,
-                overall_score       = EXCLUDED.overall_score,
-                updated_at          = NOW();
+                readiness_score = EXCLUDED.readiness_score,
+                overall_score = EXCLUDED.overall_score,
+                updated_at = NOW();
             """,
             [
                 (
