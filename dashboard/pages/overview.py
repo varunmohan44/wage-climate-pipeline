@@ -1,12 +1,18 @@
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
 import streamlit as st
 import plotly.express as px
 from utils import run_query
 
 st.title("Wage-Climate Vulnerability Index")
 st.caption("Which developing countries are caught in cycles where climate stress worsens wages and deteriorates labor markets?")
+
+# Fetch the latest year that has full-coverage data (>= 4 components) once,
+# then reuse it in all subsequent queries to avoid repeating the subquery.
+latest_year_df = run_query("""
+    select max(year) as year
+    from dev_facts.fct_wage_climate_vulnerability
+    where components_used >= 4
+""")
+latest_year = int(latest_year_df["year"][0])
 
 stats = run_query("""
     select
@@ -16,16 +22,12 @@ stats = run_query("""
         count(*) filter (where vulnerability_tier = 'Low')             as low_count
     from dev_facts.fct_wage_climate_vulnerability
     where components_used >= 4
-      and year = (
-          select max(year)
-          from dev_facts.fct_wage_climate_vulnerability
-          where components_used >= 4
-      )
-""")
+      and year = %(year)s
+""", params={"year": latest_year})
 
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Countries Tracked", int(stats["countries_tracked"][0]))
-col2.metric("Latest Year", int(stats["last_year"][0]))
+col2.metric("Latest Year", latest_year)
 col3.metric("High Vulnerability", int(stats["high_count"][0]))
 col4.metric("Low Vulnerability", int(stats["low_count"][0]))
 
@@ -43,13 +45,11 @@ rankings = run_query("""
         round(poverty_headcount_ratio::numeric, 1)              as poverty_pct,
         round(gain_vulnerability_score::numeric, 3)             as climate_vulnerability
     from dev_facts.fct_wage_climate_vulnerability
-    where year = (
-        select max(year) from dev_facts.fct_wage_climate_vulnerability where components_used >= 4
-    )
+    where year = %(year)s
       and components_used >= 4
     order by vulnerability_index desc
     limit 20
-""")
+""", params={"year": latest_year})
 
 st.dataframe(rankings, use_container_width=True, hide_index=True)
 
@@ -59,13 +59,11 @@ st.subheader("Distribution by Vulnerability Tier")
 tier_data = run_query("""
     select vulnerability_tier, count(*) as country_count
     from dev_facts.fct_wage_climate_vulnerability
-    where year = (
-        select max(year) from dev_facts.fct_wage_climate_vulnerability where components_used >= 4
-    )
+    where year = %(year)s
       and components_used >= 4
     group by vulnerability_tier
     order by vulnerability_tier
-""")
+""", params={"year": latest_year})
 
 fig = px.bar(
     tier_data,

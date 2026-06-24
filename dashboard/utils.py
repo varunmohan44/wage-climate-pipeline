@@ -1,13 +1,15 @@
+import os
+
 import psycopg2
 import pandas as pd
 import streamlit as st
 
 DB_CONFIG = {
-    "host": "localhost",
-    "port": 5433,
-    "database": "pipeline",
-    "user": "pipeline",
-    "password": "pipeline",
+    "host":     os.getenv("PIPELINE_DB_HOST", "localhost"),
+    "port":     int(os.getenv("PIPELINE_DB_PORT", "5433")),
+    "database": os.getenv("PIPELINE_DB_NAME", "pipeline"),
+    "user":     os.getenv("PIPELINE_DB_USER", "pipeline"),
+    "password": os.getenv("PIPELINE_DB_PASSWORD", "pipeline"),
 }
 
 @st.cache_data(ttl=300)
