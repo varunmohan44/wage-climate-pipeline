@@ -59,7 +59,7 @@ This project fuses multiple publicly available datasets to produce that index. S
     cp .env.example .env
     ```
 
-    The defaults in `.env.example` match the Docker Compose setup. The only value you need to supply is `ND_GAIN_CSV_PATH` — point it at a local copy of the ND-GAIN country index CSV (downloadable from [gain.nd.edu](https://gain.nd.edu/our-work/country-index/download-data/)).
+    The defaults match the Docker Compose setup — no changes are required. ND-GAIN data is downloaded automatically when the DAG runs.
 
 3.  Start Airflow and the pipeline database
 
@@ -114,6 +114,10 @@ The dashboard has three pages:
 - **Trends** — global P10/average/P90 vulnerability over time (2000–present) and a per-country time series for the top 10 most consistently vulnerable countries
 - **Country Explorer** — select any country to view its composite index over time, component breakdown for the most recent year, and a scatter plot of informality vs. vulnerability
 
+![Overview](screenshots/overview.png)
+![Trends](screenshots/trends.png)
+![Country Explorer](screenshots/explorer.png)
+
 **Data coverage notes:**
 - The composite index uses up to 6 components. Rows with fewer than 2 contributing components are excluded. Most countries with full coverage score 4–5 components.
 - `informality_rate_total` is currently unpopulated — ILO coverage for the informal employment indicator is sparse and was not ingested. This is a known gap.
@@ -134,7 +138,6 @@ The dashboard has three pages:
 - [x] Streamlit dashboard (Overview, Trends, Country Explorer)
 - [ ] Populate `region` and `income_group` from World Bank country metadata
 - [ ] Ingest informal employment rate (`EMP_2IFL_SEX_RT`) from ILOSTAT
-- [ ] Add architecture diagram / screenshot to README
 
 ------------------------------------------------------------------------
 
@@ -149,7 +152,7 @@ All sources are fully automatable with no scraping required.
 | [World Bank WDI climate proxies](https://data.worldbank.org/) | Climate exposure/adaptation proxies: electricity access, freshwater withdrawal, precipitation, arable land, forest cover | Annual | REST API |
 | [ND-GAIN](https://gain.nd.edu/our-work/country-index/) | Structural climate vulnerability & adaptive readiness | Annual | Static CSV |
 
-> ND-GAIN ingestion reads from `ND_GAIN_CSV_PATH` (local file) or `ND_GAIN_CSV_URL` (remote). Set one of these in `.env`.
+> ND-GAIN data is downloaded automatically from [gain.nd.edu](https://gain.nd.edu/our-work/country-index/download-data/) when the DAG runs. No manual download required.
 
 ------------------------------------------------------------------------
 
