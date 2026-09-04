@@ -50,13 +50,8 @@ final AS (
 
         -- structural vulnerability (ND-GAIN)
         g.vulnerability_score AS gain_vulnerability_score,
-        g.vulnerability_rank AS gain_vulnerability_rank,
         g.readiness_score AS gain_readiness_score,
-        g.readiness_rank AS gain_readiness_rank,
         g.overall_score AS gain_overall_score,
-        g.overall_rank AS gain_overall_rank,
-        g.region,
-        g.income_group,
 
         CURRENT_TIMESTAMP AS dbt_updated_at
 

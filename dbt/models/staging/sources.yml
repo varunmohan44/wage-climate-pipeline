@@ -80,20 +80,10 @@ sources:
             description: "Calendar year of the ND-GAIN observation"
           - name: vulnerability_score
             description: "ND-GAIN vulnerability score (0-1)"
-          - name: vulnerability_rank
-            description: "ND-GAIN vulnerability rank among all countries. Not currently populated by the ingestion DAG."
           - name: readiness_score
             description: "ND-GAIN readiness score (0-1)"
-          - name: readiness_rank
-            description: "ND-GAIN readiness rank among all countries. Not currently populated by the ingestion DAG."
           - name: overall_score
             description: "ND-GAIN overall adaptation score (readiness minus vulnerability, rescaled)"
-          - name: overall_rank
-            description: "ND-GAIN overall adaptation rank among all countries. Not currently populated by the ingestion DAG."
-          - name: region
-            description: "Geographic region. Not currently populated by the ingestion DAG."
-          - name: income_group
-            description: "World Bank income group. Not currently populated by the ingestion DAG."
           - name: loaded_at
             description: "Timestamp of first ingestion"
           - name: updated_at

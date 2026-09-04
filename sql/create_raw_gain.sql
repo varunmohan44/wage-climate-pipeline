@@ -10,13 +10,8 @@ CREATE TABLE IF NOT EXISTS raw.raw_gain (
     country_name        TEXT            NOT NULL,
     year                SMALLINT        NOT NULL,
     vulnerability_score DOUBLE PRECISION,
-    vulnerability_rank  INTEGER,
     readiness_score     DOUBLE PRECISION,
-    readiness_rank      INTEGER,
     overall_score       DOUBLE PRECISION,
-    overall_rank        INTEGER,
-    region              TEXT,
-    income_group        TEXT,
     loaded_at           TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
 
