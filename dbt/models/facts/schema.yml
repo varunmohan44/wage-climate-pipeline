@@ -94,25 +94,25 @@ models:
         description: "ND-GAIN country vulnerability score. Higher = more vulnerable."
 
       - name: gain_vulnerability_rank
-        description: "ND-GAIN vulnerability rank among all countries."
+        description: "ND-GAIN vulnerability rank among all countries. Not currently populated — the ND-GAIN ingestion DAG does not write this field."
 
       - name: gain_readiness_score
         description: "ND-GAIN adaptive readiness score. Higher = more ready."
 
       - name: gain_readiness_rank
-        description: "ND-GAIN readiness rank among all countries."
+        description: "ND-GAIN readiness rank among all countries. Not currently populated — the ND-GAIN ingestion DAG does not write this field."
 
       - name: gain_overall_score
         description: "ND-GAIN overall adaptation score (readiness minus vulnerability)."
 
       - name: gain_overall_rank
-        description: "ND-GAIN overall adaptation rank among all countries."
+        description: "ND-GAIN overall adaptation rank among all countries. Not currently populated — the ND-GAIN ingestion DAG does not write this field."
 
       - name: region
-        description: "Geographic region assigned by ND-GAIN. Useful for dashboard filtering."
+        description: "Geographic region assigned by ND-GAIN. Not currently populated — the ND-GAIN ingestion DAG does not write this field."
 
       - name: income_group
-        description: "Income group assigned by ND-GAIN. Useful for developing-country segmentation."
+        description: "Income group assigned by ND-GAIN. Not currently populated — the ND-GAIN ingestion DAG does not write this field."
 
       - name: dbt_updated_at
         description: "Timestamp this row was last processed by dbt"
@@ -165,10 +165,10 @@ models:
           - not_null
 
       - name: region
-        description: "Geographic region (from ND-GAIN). Null when ND-GAIN has no data."
+        description: "Geographic region (from ND-GAIN). Not currently populated — the ND-GAIN ingestion DAG does not write this field."
 
       - name: income_group
-        description: "Income group (from ND-GAIN). Useful for developing-country filtering."
+        description: "Income group (from ND-GAIN). Not currently populated — the ND-GAIN ingestion DAG does not write this field."
 
       - name: vulnerability_index
         description: >
