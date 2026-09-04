@@ -62,9 +62,40 @@ sources:
           - name: value
             description: "Indicator value"
 
-      
-      
-
       - name: raw_gain
         description: "ND-GAIN country vulnerability and readiness scores loaded by dag_ingest_nd_gain."
+        loaded_at_field: updated_at
+        freshness:
+          # dag_ingest_nd_gain runs @yearly (vs. @monthly for the other two sources),
+          # so the warn/error windows are scaled to that cadence instead of reusing
+          # the 8/30-day windows above.
+          warn_after: {count: 400, period: day}
+          error_after: {count: 540, period: day}
+        columns:
+          - name: country_code
+            description: "ISO 3166-1 alpha-3 country code"
+          - name: country_name
+            description: "Country name from ND-GAIN"
+          - name: year
+            description: "Calendar year of the ND-GAIN observation"
+          - name: vulnerability_score
+            description: "ND-GAIN vulnerability score (0-1)"
+          - name: vulnerability_rank
+            description: "ND-GAIN vulnerability rank among all countries. Not currently populated by the ingestion DAG."
+          - name: readiness_score
+            description: "ND-GAIN readiness score (0-1)"
+          - name: readiness_rank
+            description: "ND-GAIN readiness rank among all countries. Not currently populated by the ingestion DAG."
+          - name: overall_score
+            description: "ND-GAIN overall adaptation score (readiness minus vulnerability, rescaled)"
+          - name: overall_rank
+            description: "ND-GAIN overall adaptation rank among all countries. Not currently populated by the ingestion DAG."
+          - name: region
+            description: "Geographic region. Not currently populated by the ingestion DAG."
+          - name: income_group
+            description: "World Bank income group. Not currently populated by the ingestion DAG."
+          - name: loaded_at
+            description: "Timestamp of first ingestion"
+          - name: updated_at
+            description: "Timestamp of most recent upsert"
 
