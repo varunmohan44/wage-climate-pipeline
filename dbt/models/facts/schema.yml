@@ -124,8 +124,9 @@ models:
 
   - name: fct_wage_climate_vulnerability
     description: >
-      Composite country-level wage-climate vulnerability index. The main pipeline output.
-      Each of six components is normalized to [0,1] via PERCENT_RANK() within year so
+      Optional derived view illustrating one way the mart could be consumed: a weighted
+      composite of six reconciled indicators, not a validated index or an analytical
+      claim. Each component is normalized to [0,1] via PERCENT_RANK() within year so
       countries are ranked relative to peers in the same year. Higher score = higher
       vulnerability. The composite is the mean of non-null components; rows with fewer
       than 2 contributing components are excluded. Grain: (country_code, year).
