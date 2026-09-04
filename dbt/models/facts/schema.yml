@@ -4,9 +4,9 @@ models:
   - name: fct_labor_conditions
     description: >
       Wide analytical labor table. stg_labor is the spine — one row per country/year
-      where ILOSTAT has data. World Bank economic context, climate proxies, and
-      ND-GAIN vulnerability scores are left-joined; nulls are preserved so the
-      composite index can apply its own coverage thresholds.
+      where ILOSTAT has data. World Bank economic context and ND-GAIN vulnerability
+      scores are left-joined; nulls are preserved so downstream consumers can apply
+      their own coverage thresholds.
       Grain: (country_code, year).
 
       Data quality notes: every row is guaranteed to have at least one ILOSTAT
@@ -87,23 +87,6 @@ models:
 
       - name: oda_received_usd
         description: "Net ODA received in current USD (DT.ODA.ALLD.CD). Null when WB has no data."
-
-      # --- World Bank climate proxies ---
-
-      - name: access_to_electricity_pct
-        description: "Access to electricity as % of population (EG.ELC.ACCS.ZS). Adaptation capacity proxy."
-
-      - name: freshwater_withdrawal_pct_internal_resources
-        description: "Freshwater withdrawal as % of internal resources (ER.H2O.FWTL.ZS). Water stress proxy."
-
-      - name: precipitation_mm
-        description: "Annual precipitation in millimeters (AG.LND.PRCP.MM). Climate exposure signal."
-
-      - name: arable_land_pct
-        description: "Arable land as % of land area (AG.LND.ARBL.ZS). Agricultural climate vulnerability."
-
-      - name: forest_area_pct
-        description: "Forest area as % of land area (AG.LND.FRST.ZS). Ecological resilience buffer."
 
       # --- ND-GAIN structural vulnerability ---
 
@@ -249,15 +232,6 @@ models:
 
       - name: gdp_per_capita_usd
         description: "Raw GDP per capita in current USD (from fct_labor_conditions)."
-
-      - name: access_to_electricity_pct
-        description: "Raw access to electricity % (from fct_labor_conditions)."
-
-      - name: precipitation_mm
-        description: "Raw annual precipitation in mm (from fct_labor_conditions)."
-
-      - name: freshwater_withdrawal_pct_internal_resources
-        description: "Raw freshwater withdrawal % of internal resources (from fct_labor_conditions)."
 
       - name: in_economic
         description: "True if this country is covered by the World Bank WDI pipeline."
