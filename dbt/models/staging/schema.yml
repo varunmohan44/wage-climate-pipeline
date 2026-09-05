@@ -235,9 +235,13 @@ models:
                 max_value: 100
 
       - name: total_employment_nb
-        description: "Total employment count across all statuses (EMP_2EMP_SEX_STE_NB, SEX_T, STE=_T). Null when ILO has no data."
+        description: >
+          Total employment count across all statuses (EMP_2EMP_SEX_STE_NB, SEX_T,
+          status_in_employment=STE_AGGREGATE_TOTAL — ILO's current ICSE-18-based
+          total classification, chosen over the legacy STE_ICSE93_TOTAL code which
+          carries near-identical values). Null when ILO has no data.
         meta:
-          coverage: medium
+          coverage: high
 
       - name: dbt_updated_at
         description: "Timestamp this row was last processed by dbt"

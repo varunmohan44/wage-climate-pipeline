@@ -42,7 +42,7 @@ observation.
 | `informality_rate_total` | `EMP_2IFL_SEX_RT`, sex=total — "Informal employment rate (ILO modelled estimates)" | Percent, 0–100 | Medium. Better coverage than earnings — ILO modeled estimates fill gaps for countries without direct surveys. |
 | `informality_rate_male` | same indicator, sex=male | Percent, 0–100 | Medium |
 | `informality_rate_female` | same indicator, sex=female | Percent, 0–100 | Medium |
-| `total_employment_nb` | `EMP_2EMP_SEX_STE_NB`, sex=total, status_in_employment=total — "Employment (ILO modelled estimates)" | Count of persons | **Always null — known bug, not a coverage gap.** `stg_labor.sql` filters `status_in_employment = '_T'`, but the raw ILOSTAT data uses `STE_AGGREGATE_TOTAL` / `STE_ICSE93_TOTAL` for the total row; `'_T'` never matches. 165,384 raw rows exist for this indicator but 0 of 6,899 `stg_labor` rows have a value. Not fixed as part of this pass — picking the right STE aggregate needs a call on which ILO classification vintage is authoritative. |
+| `total_employment_nb` | `EMP_2EMP_SEX_STE_NB`, sex=total, status_in_employment=`STE_AGGREGATE_TOTAL` — "Employment (ILO modelled estimates)" | Count of persons | High (99.9% of `stg_labor` rows). Previously always null: `stg_labor.sql` filtered `status_in_employment = '_T'`, which never matched any real ILOSTAT code. Fixed to filter on `STE_AGGREGATE_TOTAL`, ILO's current ICSE-18-based total classification. The legacy `STE_ICSE93_TOTAL` code carries near-identical values (agrees to the raw figure in ~59% of rows, differs only at the last decimal place otherwise) and was not used. |
 
 ## World Bank economic context
 

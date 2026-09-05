@@ -72,7 +72,7 @@ models:
         description: "Informal employment rate, female workers (EMP_2IFL_SEX_RT, SEX_F)"
 
       - name: total_employment_nb
-        description: "Total employment count across all statuses (EMP_2EMP_SEX_STE_NB, SEX_T, STE=_T)"
+        description: "Total employment count across all statuses (EMP_2EMP_SEX_STE_NB, SEX_T, STE=STE_AGGREGATE_TOTAL)"
 
       # --- World Bank economic context ---
 
