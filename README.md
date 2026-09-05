@@ -14,7 +14,7 @@ This pipeline solves that problem: it ingests each source, lands it immutably, c
 
 The variables are reconciled and co-located, not collapsed into a single score — interpretation is left to whoever queries the mart.
 
-### Built With
+### Built with
 
 ![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=for-the-badge&logo=apacheairflow&logoColor=white)
 ![dbt](https://img.shields.io/badge/dbt-FF694B?style=for-the-badge&logo=dbt&logoColor=white)
@@ -38,14 +38,14 @@ Reconciling three country-identification schemes (ISO-2 / ISO-3 / names) into on
 
 ---
 
-## Pipeline Architecture
+## Pipeline architecture
 
 ```
         ILOSTAT API        World Bank API        ND-GAIN CSV
              │                   │                    │
              └─────────── Airflow DAGs (Python) ──────┘
                                  │
-                 PostgreSQL — Raw Layer (immutable landing)
+                 PostgreSQL — Raw layer (immutable landing)
                                  │
                               dbt Core
                                  │
@@ -88,7 +88,7 @@ A broken, drifted, or stale source fails the build loudly instead of corrupting 
 
 ---
 
-## Getting Started
+## Getting started
 
 ### Prerequisites
 - Docker Desktop
@@ -114,7 +114,7 @@ The Airflow UI is at `http://localhost:8080`; the dbt docs site opens locally af
 
 ---
 
-## Data Sources
+## Data sources
 
 | Source | Role | Cadence | Type |
 | --- | --- | --- | --- |
