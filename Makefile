@@ -9,9 +9,14 @@ up:
 	docker compose exec -T pipeline-db psql -U pipeline -d pipeline < sql/create_raw_gain.sql
 
 # Trigger the three ingestion DAGs.
+# Unpause first — DAGs are paused at creation (see docker-compose.yaml), so a
+# trigger against a never-unpaused DAG would otherwise queue and never run.
 ingest:
+	docker compose exec -T airflow-apiserver airflow dags unpause dag_ingest_economic
 	docker compose exec -T airflow-apiserver airflow dags trigger dag_ingest_economic
+	docker compose exec -T airflow-apiserver airflow dags unpause dag_ingest_ilostat
 	docker compose exec -T airflow-apiserver airflow dags trigger dag_ingest_ilostat
+	docker compose exec -T airflow-apiserver airflow dags unpause dag_ingest_nd_gain
 	docker compose exec -T airflow-apiserver airflow dags trigger dag_ingest_nd_gain
 
 # Run dbt models + tests.
