@@ -56,7 +56,7 @@ sources:
           - name: economic_activity
             description: "Economic activity dimension code"
           - name: status_in_employment
-            description: "Status in employment dimension code (e.g. STE_ICSE93_1, _T for total)"
+            description: "Status in employment dimension code (e.g. STE_ICSE93_1, STE_AGGREGATE_TOTAL for total)"
           - name: year
             description: "Calendar year of observation"
           - name: value
