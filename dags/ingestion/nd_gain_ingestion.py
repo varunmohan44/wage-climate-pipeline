@@ -35,6 +35,17 @@ def _download_zip() -> bytes:
     return response.content
 
 
+def _resolve_member(zf: zipfile.ZipFile, suffix: str) -> str:
+    # ND-GAIN's zip has nested the resources/ dir under a varying top-level
+    # folder name across releases (e.g. "resources 2/"), so match by suffix
+    # instead of assuming a fixed prefix. __MACOSX/ entries mirror real paths
+    # and must be excluded.
+    matches = [n for n in zf.namelist() if n.endswith(suffix) and "__MACOSX" not in n]
+    if not matches:
+        raise KeyError(f"No archive member ending with {suffix!r} found in ND-GAIN zip")
+    return matches[0]
+
+
 def _parse_wide(zf: zipfile.ZipFile, member: str) -> dict[str, dict[str, float | None]]:
     with zf.open(member) as raw:
         reader = csv.DictReader(io.TextIOWrapper(raw, encoding="utf-8"))
@@ -67,10 +78,14 @@ def fetch_gain_records() -> list[dict]:
     zip_bytes = _download_zip()
 
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
-        gain_scores = _parse_wide(zf, "resources/gain/gain.csv")
-        vuln_scores = _parse_wide(zf, "resources/vulnerability/vulnerability.csv")
-        read_scores = _parse_wide(zf, "resources/readiness/readiness.csv")
-        names = _country_names(zf, "resources/gain/gain.csv")
+        gain_member = _resolve_member(zf, "gain/gain.csv")
+        vuln_member = _resolve_member(zf, "vulnerability/vulnerability.csv")
+        read_member = _resolve_member(zf, "readiness/readiness.csv")
+
+        gain_scores = _parse_wide(zf, gain_member)
+        vuln_scores = _parse_wide(zf, vuln_member)
+        read_scores = _parse_wide(zf, read_member)
+        names = _country_names(zf, gain_member)
 
     all_iso3 = set(gain_scores) | set(vuln_scores) | set(read_scores)
     records = []
