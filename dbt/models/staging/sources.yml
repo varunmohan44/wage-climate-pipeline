@@ -61,6 +61,10 @@ sources:
             description: "Calendar year of observation"
           - name: value
             description: "Indicator value"
+          - name: loaded_at
+            description: "Timestamp of first ingestion"
+          - name: updated_at
+            description: "Timestamp of most recent upsert"
 
       - name: raw_gain
         description: "ND-GAIN country vulnerability and readiness scores loaded by dag_ingest_nd_gain."
