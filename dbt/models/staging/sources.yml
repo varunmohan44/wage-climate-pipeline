@@ -56,15 +56,40 @@ sources:
           - name: economic_activity
             description: "Economic activity dimension code"
           - name: status_in_employment
-            description: "Status in employment dimension code (e.g. STE_ICSE93_1, _T for total)"
+            description: "Status in employment dimension code (e.g. STE_ICSE93_1, STE_AGGREGATE_TOTAL for total)"
           - name: year
             description: "Calendar year of observation"
           - name: value
             description: "Indicator value"
-
-      
-      
+          - name: loaded_at
+            description: "Timestamp of first ingestion"
+          - name: updated_at
+            description: "Timestamp of most recent upsert"
 
       - name: raw_gain
         description: "ND-GAIN country vulnerability and readiness scores loaded by dag_ingest_nd_gain."
+        loaded_at_field: updated_at
+        freshness:
+          # dag_ingest_nd_gain runs @yearly (vs. @monthly for the other two sources),
+          # so the warn/error windows are scaled to that cadence instead of reusing
+          # the 8/30-day windows above.
+          warn_after: {count: 400, period: day}
+          error_after: {count: 540, period: day}
+        columns:
+          - name: country_code
+            description: "ISO 3166-1 alpha-3 country code"
+          - name: country_name
+            description: "Country name from ND-GAIN"
+          - name: year
+            description: "Calendar year of the ND-GAIN observation"
+          - name: vulnerability_score
+            description: "ND-GAIN vulnerability score (0-1)"
+          - name: readiness_score
+            description: "ND-GAIN readiness score (0-1)"
+          - name: overall_score
+            description: "ND-GAIN overall adaptation score (readiness minus vulnerability, rescaled)"
+          - name: loaded_at
+            description: "Timestamp of first ingestion"
+          - name: updated_at
+            description: "Timestamp of most recent upsert"
 

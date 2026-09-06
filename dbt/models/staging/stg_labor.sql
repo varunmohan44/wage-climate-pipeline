@@ -25,7 +25,7 @@ pivoted AS (
         MAX(CASE WHEN indicator_code = 'EMP_2IFL_SEX_RT' AND sex = 'SEX_T' THEN value END) AS informality_rate_total,
         MAX(CASE WHEN indicator_code = 'EMP_2IFL_SEX_RT' AND sex = 'SEX_M' THEN value END) AS informality_rate_male,
         MAX(CASE WHEN indicator_code = 'EMP_2IFL_SEX_RT' AND sex = 'SEX_F' THEN value END) AS informality_rate_female,
-        MAX(CASE WHEN indicator_code = 'EMP_2EMP_SEX_STE_NB' AND sex = 'SEX_T' AND status_in_employment = '_T' THEN value END) AS total_employment_nb
+        MAX(CASE WHEN indicator_code = 'EMP_2EMP_SEX_STE_NB' AND sex = 'SEX_T' AND status_in_employment = 'STE_AGGREGATE_TOTAL' THEN value END) AS total_employment_nb
     FROM source
     GROUP BY country_code, year
 )

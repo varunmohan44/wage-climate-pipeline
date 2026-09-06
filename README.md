@@ -1,220 +1,154 @@
-<h3>Developing World Wage & Labor Vulnerability Pipeline</h3>
+# Multi-Source Labor & Development Data Pipeline
 
-<p>A data engineering pipeline that tracks how climate shocks, food insecurity, and structural vulnerability translate into wage depression and labor market deterioration in developing countries. <br /> <a href="#about-the-project"><strong>Explore the docs »</strong></a> <br /><br /> <a href="#roadmap">View Roadmap</a> · <a href="https://github.com/varunmohan44/wage-climate-pipeline/issues/new?labels=bug">Report Bug</a> · <a href="https://github.com/varunmohan44/wage-climate-pipeline/issues/new?labels=enhancement">Request Feature</a></p>
+An automated, containerized batch pipeline that integrates three heterogeneous public data sources — different APIs, formats, cadences, and country-coding schemes — into a reconciled, tested, analysis-ready data warehouse.
 
-------------------------------------------------------------------------
+[Built With](#built-with) · [Integration Challenges](#integration-challenges-handled) · [Architecture](#pipeline-architecture) · [The Deliverable](#the-deliverable) · [Getting Started](#getting-started)
 
-## Table of Contents
+---
 
-1.  [About The Project](#about-the-project)
-    -   [Built With](#built-with)
-2.  [Getting Started](#getting-started)
-    -   [Prerequisites](#prerequisites)
-    -   [Installation](#installation)
-3.  [Usage](#usage)
-4.  [Roadmap](#roadmap)
-5.  [Data Sources](#data-sources)
-6.  [Pipeline Architecture](#pipeline-architecture)
-7.  [Contact](#contact)
-8.  [Acknowledgments](#acknowledgments)
+## What this project does
 
-------------------------------------------------------------------------
+Public data on labor markets, economic structure, and climate vulnerability lives in three different institutions, in three different formats, on three different update cadences, and under three different country-identification schemes. Any analysis that wants to use them together first has to solve an *integration* problem.
 
-## About The Project
+This pipeline solves that problem: it ingests each source, lands it immutably, cleans and conforms it, reconciles every source to a single country key, and builds a wide, tested, documented country-year mart that a downstream analyst or model can consume directly.
 
-The academic literature establishes that climate stress depresses wages in developing countries. This pipeline makes that relationship trackable in near real-time. Specifically I ask:
+The variables are reconciled and co-located, not collapsed into a single score — interpretation is left to whoever queries the mart.
 
-How do climate shocks, food insecurity, and structural vulnerability translate into wage depression and labor market deterioration in developing countries?
+### Built with
 
-Climate and food signals are the explanatory variables. Wages and labor conditions, informed by things like informality rates, working poverty, and gender wage gaps, are what is being explained. The output is a composite country-level index (`fct_wage_climate_vulnerability`) that tracks which countries in the global south are caught in cycles where climate stress worsens wages and deteriorates the labor market and which are showing resilience.
+![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=for-the-badge&logo=apacheairflow&logoColor=white)
+![dbt](https://img.shields.io/badge/dbt-FF694B?style=for-the-badge&logo=dbt&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
-This project fuses multiple publicly available datasets to produce that index. Specifically I join ILOSTAT wage data with World Bank indicators and ND-GAIN vulnerability scores.
+---
 
-### Built With
+## Integration challenges handled
 
-[![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=for-the-badge&logo=apacheairflow&logoColor=white)](https://airflow.apache.org/) [![dbt](https://img.shields.io/badge/dbt-FF694B?style=for-the-badge&logo=dbt&logoColor=white)](https://www.getdbt.com/) [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/) [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/) [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/) [![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
+Each of the three sources presents a distinct ingestion and reconciliation problem:
 
-------------------------------------------------------------------------
+| Source | Ingestion pattern | Engineering challenge |
+| --- | --- | --- |
+| **ILOSTAT** | REST API, monthly, long format | Pagination; reshaping long → wide; high-frequency indicators |
+| **World Bank WDI** | REST API, annual, indicator-coded | Different API contract; indicator-code lookups; annual cadence to align with monthly labor data |
+| **ND-GAIN** | Static CSV download | File-based ingestion, no API; a country-naming scheme that must be reconciled to the API sources |
 
-## Getting Started
+Reconciling three country-identification schemes (ISO-2 / ISO-3 / names) into one conformed key is the core integration task, handled once in `dim_countries` so every downstream model joins cleanly.
+
+---
+
+## Pipeline architecture
+
+```
+        ILOSTAT API        World Bank API        ND-GAIN CSV
+             │                   │                    │
+             └─────────── Airflow DAGs (Python) ──────┘
+                                 │
+                 PostgreSQL — Raw layer (immutable landing)
+                                 │
+                              dbt Core
+                                 │
+        Staging (one model per source: clean, type, reshape)
+                                 │
+             dim_countries  (ISO reconciliation, conformed key)
+                                 │
+        fct_labor_conditions  ← wide, reconciled, tested
+                                 country-year analytical mart
+```
+
+Two separate Postgres instances are used by design — one for Airflow's own metadata, one for pipeline data — so orchestration state never contends with the analytical tables.
+
+---
+
+## The deliverable
+
+The product of this pipeline is the data itself:
+
+1. **`fct_labor_conditions`** — a wide, reconciled, tested country-year mart integrating labor and economic indicators, with climate-vulnerability context from the reconciled sources, documented column-by-column.
+2. **An interactive lineage graph and data catalog** via dbt docs, which renders the full raw → staging → dimension → fact flow and documents every model and column:
+   ```
+   make docs
+   ```
+3. **A data dictionary** (`docs/data_dictionary.md`) describing each column, its source, units, and coverage — what makes the mart usable by someone who didn't build it.
+
+*(An optional derived view, `fct_wage_climate_vulnerability`, illustrates one way the mart could be consumed — a weighted composite, not a validated index or an analytical claim.)*
+
+---
+
+## Data quality
+
+Quality is enforced declaratively and runs on every build:
+
+- **Model & column documentation** — every model and column is described in `schema.yml`, feeding the dbt docs catalog.
+- **Tests** (`dbt test`) — `unique` and `not_null` on keys, `relationships` (referential integrity) against `dim_countries`, and `accepted_values` / accepted-range checks on categorical and indicator columns.
+- **Source freshness** — `dbt source freshness` checks the raw tables against expected update windows, so stale ingestion is caught rather than silently served.
+
+A broken, drifted, or stale source fails the build loudly instead of corrupting the mart.
+
+---
+
+## Getting started
 
 ### Prerequisites
+- Docker Desktop
+- Python 3.10+
+- dbt Core (`pip install dbt-postgres`)
 
--   [Docker Desktop](https://www.docker.com/products/docker-desktop/)
--   Python 3.10+
--   dbt Core (`pip install dbt-postgres`)
+### Quick start
 
-### Installation
+A `Makefile` wraps the common commands:
 
-1.  Clone the repo
+```bash
+git clone https://github.com/varunmohan44/wage-climate-pipeline.git
+cd wage-climate-pipeline
+cp .env.example .env     # defaults match the Docker Compose setup
 
-    ``` sh
-    git clone https://github.com/varunmohan44/wage-climate-pipeline.git
-    cd wage-climate-pipeline
-    ```
+make up                  # start Airflow + both Postgres instances
+make ingest              # trigger the three ingestion DAGs
+make build               # dbt build — runs models + tests
+make docs                # generate & serve the dbt docs catalog
+```
 
-2.  Copy the example environment file
+The Airflow UI is at `http://localhost:8080`; the dbt docs site opens locally after `make docs`.
 
-    ``` sh
-    cp .env.example .env
-    ```
+---
 
-    The defaults match the Docker Compose setup — no changes are required. ND-GAIN data is downloaded automatically when the DAG runs.
+## Data sources
 
-3.  Start Airflow and the pipeline database
+| Source | Role | Cadence | Type |
+| --- | --- | --- | --- |
+| [ILOSTAT](https://ilostat.ilo.org/data/) | Labor: wages, informality, working poverty, gender wage gap | Monthly | REST API |
+| [World Bank WDI](https://data.worldbank.org/) | Economic & structural context (GDP, poverty headcount, rural population, ODA) | Annual | REST API |
+| [ND-GAIN](https://gain.nd.edu/our-work/country-index/) | Climate vulnerability & adaptive readiness | Annual | Static CSV |
 
-    ``` sh
-    docker compose up -d
-    ```
+All three are fully automatable — no scraping required. ND-GAIN downloads automatically when its DAG runs.
 
-    This starts two Postgres instances: one for Airflow metadata (`localhost:5432`) and one for pipeline data (`localhost:5433`).
+---
 
-4.  Create the raw schema tables
+## Design notes
 
-    ``` sh
-    psql postgresql://pipeline:pipeline@localhost:5433/pipeline -f sql/create_raw_labor.sql
-    psql postgresql://pipeline:pipeline@localhost:5433/pipeline -f sql/create_raw_economic.sql
-    psql postgresql://pipeline:pipeline@localhost:5433/pipeline -f sql/create_raw_gain.sql
-    ```
+A few decisions worth surfacing:
 
-5.  Trigger ingestion DAGs in the Airflow UI at `http://localhost:8080` (login: `airflow` / `airflow`)
+- **Immutable raw layer.** Ingestion writes each source to `raw.*` untouched, so every transformation can be replayed without re-pulling from the APIs.
+- **Dual Postgres.** Airflow metadata and pipeline data are kept in separate instances so orchestration churn never contends with the analytical tables.
+- **Conformed dimension.** Country-key reconciliation across three identification schemes happens once, in `dim_countries`, rather than being re-solved in every join.
+- **Cadence alignment.** Monthly labor indicators and annual structural indicators are aligned to a common country-year grain in staging, before they meet in the facts.
 
-    Run these three DAGs in order or let them execute on their default schedules:
-    - `dag_ingest_economic` — World Bank WDI indicators
-    - `dag_ingest_ilostat` — ILOSTAT wages and labor conditions
-    - `dag_ingest_nd_gain` — ND-GAIN vulnerability and readiness scores
-
-6.  Run dbt to build the analytical models
-
-    ``` sh
-    cd dbt
-    dbt run
-    dbt test
-    ```
-
-7.  Launch the dashboard
-
-    ``` sh
-    cd dashboard
-    pip install -r ../requirements.txt
-    streamlit run app.py
-    ```
-
-    Open `http://localhost:8501` in your browser.
-
-------------------------------------------------------------------------
-
-## Usage
-
-The pipeline produces a composite country-level index (`fct_wage_climate_vulnerability`) in the `dev_facts` schema, queryable directly in PostgreSQL or via the Streamlit dashboard.
-
-The dashboard has three pages:
-
-- **Overview** — top 20 most vulnerable countries in the latest year, with GDP and climate vulnerability scores, plus a tier distribution chart
-- **Trends** — global P10/average/P90 vulnerability over time (2000–present) and a per-country time series for the top 10 most consistently vulnerable countries
-- **Country Explorer** — select any country to view its composite index over time, component breakdown for the most recent year, and a scatter plot of informality vs. vulnerability
-
-![Overview](screenshots/overview.png)
-![Trends](screenshots/trends.png)
-![Country Explorer](screenshots/explorer.png)
-
-**Data coverage notes:**
-- The composite index uses up to 6 components. Rows with fewer than 2 contributing components are excluded. Most countries with full coverage score 4–5 components.
-- `informality_rate_total` is currently unpopulated — ILO coverage for the informal employment indicator is sparse and was not ingested. This is a known gap.
-- `region` and `income_group` are stored in the schema but not yet populated. They come from the ND-GAIN CSV which does not include those fields directly.
-
-------------------------------------------------------------------------
+---
 
 ## Roadmap
 
-- [x] Airflow DAG skeleton & Docker Compose setup
-- [x] World Bank API ingestion (`stg_economic`, `stg_climate`)
-- [x] ILOSTAT API ingestion (`stg_labor`)
-- [x] ND-GAIN CSV ingestion (`stg_gain`)
-- [x] `dim_countries` — ISO code reconciliation across all sources
-- [x] `fct_labor_conditions` — wide-format analytical labor table
-- [x] `fct_wage_climate_vulnerability` — composite index (main output)
-- [x] dbt tests & data quality documentation
-- [x] Streamlit dashboard (Overview, Trends, Country Explorer)
-- [ ] Populate `region` and `income_group` from World Bank country metadata
-- [ ] Ingest informal employment rate (`EMP_2IFL_SEX_RT`) from ILOSTAT
+- [x] Containerized Airflow + dual-Postgres setup
+- [x] Three-source ingestion (ILOSTAT API, World Bank API, ND-GAIN CSV)
+- [x] `dim_countries` — ISO reconciliation across all sources
+- [x] `fct_labor_conditions` — reconciled analytical mart
+- [x] dbt tests, source freshness & column documentation
+- [x] dbt docs lineage graph & data dictionary
+- [ ] CI: run `dbt build` against a Postgres service on every push
 
-------------------------------------------------------------------------
-
-## Data Sources
-
-All sources are fully automatable with no scraping required.
-
-| Source | Role | Cadence | Type |
-|----|----|----|----|
-| [ILOSTAT](https://ilostat.ilo.org/data/) | **Anchor** — wages, informality, working poverty, gender wage gap | Monthly | REST API |
-| [World Bank WDI](https://data.worldbank.org/) | Structural economic context (GDP, poverty headcount, rural pop, ODA) | Annual | REST API |
-| [World Bank WDI climate proxies](https://data.worldbank.org/) | Climate exposure/adaptation proxies: electricity access, freshwater withdrawal, precipitation, arable land, forest cover | Annual | REST API |
-| [ND-GAIN](https://gain.nd.edu/our-work/country-index/) | Structural climate vulnerability & adaptive readiness | Annual | Static CSV |
-
-> ND-GAIN data is downloaded automatically from [gain.nd.edu](https://gain.nd.edu/our-work/country-index/download-data/) when the DAG runs. No manual download required.
-
-------------------------------------------------------------------------
-
-## Pipeline Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          Data Sources                               │
-│         ILOSTAT API   │   World Bank API   │   ND-GAIN CSV          │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │ Airflow DAGs (Python)
-┌──────────────────────────────▼──────────────────────────────────────┐
-│                    PostgreSQL — Raw Layer (raw.*)                   │
-│          raw_labor  │  raw_economic  │  raw_gain                    │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │ dbt Core
-┌──────────────────────────────▼──────────────────────────────────────┐
-│                   dbt — Staging Layer (dev_staging.*)               │
-│       stg_labor  │  stg_economic  │  stg_climate  │  stg_gain       │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────────┐
-│               dbt — Dimensions & Facts                              │
-│   dim_countries → fct_labor_conditions                              │
-│                 → fct_wage_climate_vulnerability  ← MAIN OUTPUT     │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────────┐
-│                        Streamlit Dashboard                          │
-│               Overview  │  Trends  │  Country Explorer              │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### dbt Model Structure
-
-```
-dbt/models/
-├── staging/
-│   ├── stg_labor.sql         # ILOSTAT: pivoted to wide format
-│   ├── stg_economic.sql      # World Bank: GDP, poverty, ODA
-│   ├── stg_climate.sql       # World Bank: climate exposure proxies
-│   └── stg_gain.sql          # ND-GAIN: vulnerability & readiness scores
-├── dimensions/
-│   └── dim_countries.sql     # ISO code reconciliation across sources
-└── facts/
-    ├── fct_labor_conditions.sql           # wide analytical labor table
-    └── fct_wage_climate_vulnerability.sql # composite index (main output)
-```
-
-------------------------------------------------------------------------
+---
 
 ## Contact
 
 Varun Mohan — varunmohann@gmail.com
-
-Project Link: <https://github.com/varunmohan44/wage-climate-pipeline>
-
-------------------------------------------------------------------------
-
-## Acknowledgments
-
--   [ILOSTAT — International Labour Organization](https://ilostat.ilo.org/)
--   [World Bank Open Data](https://data.worldbank.org/)
--   [ND-GAIN Country Index — Notre Dame Global Adaptation Initiative](https://gain.nd.edu/)
--   [shields.io](https://shields.io)

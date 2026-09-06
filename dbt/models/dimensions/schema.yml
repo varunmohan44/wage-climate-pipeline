@@ -3,11 +3,10 @@ version: 2
 models:
   - name: dim_countries
     description: >
-      Canonical country dimension. One row per ISO alpha-3 country code, unioning
-      all countries observed across the three raw sources (World Bank WDI, ND-GAIN,
-      ILOSTAT). Country names are sourced preferentially from World Bank, then
-      ND-GAIN, then ILOSTAT. Boolean flags indicate pipeline coverage per country.
-      Grain: (country_code).
+      Canonical country dimension: one row per ISO alpha-3 code, unioning countries
+      observed across the three raw sources (World Bank WDI, ND-GAIN, ILOSTAT).
+      Country name preference: World Bank, then ND-GAIN, then ILOSTAT. Boolean
+      flags indicate per-country pipeline coverage. Grain: (country_code).
     columns:
 
       - name: country_code
@@ -17,9 +16,7 @@ models:
           - unique
 
       - name: country_name
-        description: >
-          Canonical country name. World Bank name when available, otherwise
-          ND-GAIN name, otherwise ILOSTAT name.
+        description: "Canonical country name: World Bank when available, else ND-GAIN, else ILOSTAT."
         tests:
           - not_null
 

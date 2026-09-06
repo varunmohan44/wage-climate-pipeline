@@ -3,17 +3,15 @@ version: 2
 models:
   - name: fct_labor_conditions
     description: >
-      Wide analytical labor table. stg_labor is the spine — one row per country/year
-      where ILOSTAT has data. World Bank economic context, climate proxies, and
-      ND-GAIN vulnerability scores are left-joined; nulls are preserved so the
-      composite index can apply its own coverage thresholds.
-      Grain: (country_code, year).
+      Wide analytical labor table. stg_labor is the spine — one row per
+      country/year where ILOSTAT has data. World Bank economic context and
+      ND-GAIN vulnerability scores are left-joined; nulls preserved so downstream
+      consumers apply their own coverage thresholds. Grain: (country_code, year).
 
-      Data quality notes: every row is guaranteed to have at least one ILOSTAT
-      observation, but that may be only informality_rate with all earnings columns
-      null. The in_economic / in_gain / in_labor flags reflect country-level pipeline
-      coverage, not year-level coverage — a country with in_economic=true can still
-      have null economic columns for years where WB has no observation.
+      Every row has at least one ILOSTAT observation, but that may be only
+      informality_rate with all earnings columns null. in_economic/in_gain/in_labor
+      reflect country-level pipeline coverage, not year-level — in_economic=true
+      doesn't guarantee non-null economic columns for every year.
     meta:
       owner: pipeline
       domain: labor
@@ -72,7 +70,7 @@ models:
         description: "Informal employment rate, female workers (EMP_2IFL_SEX_RT, SEX_F)"
 
       - name: total_employment_nb
-        description: "Total employment count across all statuses (EMP_2EMP_SEX_STE_NB, SEX_T, STE=_T)"
+        description: "Total employment count across all statuses (EMP_2EMP_SEX_STE_NB, SEX_T, STE=STE_AGGREGATE_TOTAL)"
 
       # --- World Bank economic context ---
 
@@ -88,48 +86,16 @@ models:
       - name: oda_received_usd
         description: "Net ODA received in current USD (DT.ODA.ALLD.CD). Null when WB has no data."
 
-      # --- World Bank climate proxies ---
-
-      - name: access_to_electricity_pct
-        description: "Access to electricity as % of population (EG.ELC.ACCS.ZS). Adaptation capacity proxy."
-
-      - name: freshwater_withdrawal_pct_internal_resources
-        description: "Freshwater withdrawal as % of internal resources (ER.H2O.FWTL.ZS). Water stress proxy."
-
-      - name: precipitation_mm
-        description: "Annual precipitation in millimeters (AG.LND.PRCP.MM). Climate exposure signal."
-
-      - name: arable_land_pct
-        description: "Arable land as % of land area (AG.LND.ARBL.ZS). Agricultural climate vulnerability."
-
-      - name: forest_area_pct
-        description: "Forest area as % of land area (AG.LND.FRST.ZS). Ecological resilience buffer."
-
       # --- ND-GAIN structural vulnerability ---
 
       - name: gain_vulnerability_score
         description: "ND-GAIN country vulnerability score. Higher = more vulnerable."
 
-      - name: gain_vulnerability_rank
-        description: "ND-GAIN vulnerability rank among all countries."
-
       - name: gain_readiness_score
         description: "ND-GAIN adaptive readiness score. Higher = more ready."
 
-      - name: gain_readiness_rank
-        description: "ND-GAIN readiness rank among all countries."
-
       - name: gain_overall_score
         description: "ND-GAIN overall adaptation score (readiness minus vulnerability)."
-
-      - name: gain_overall_rank
-        description: "ND-GAIN overall adaptation rank among all countries."
-
-      - name: region
-        description: "Geographic region assigned by ND-GAIN. Useful for dashboard filtering."
-
-      - name: income_group
-        description: "Income group assigned by ND-GAIN. Useful for developing-country segmentation."
 
       - name: dbt_updated_at
         description: "Timestamp this row was last processed by dbt"
@@ -141,20 +107,20 @@ models:
 
   - name: fct_wage_climate_vulnerability
     description: >
-      Composite country-level wage-climate vulnerability index. The main pipeline output.
-      Each of six components is normalized to [0,1] via PERCENT_RANK() within year so
-      countries are ranked relative to peers in the same year. Higher score = higher
-      vulnerability. The composite is the mean of non-null components; rows with fewer
-      than 2 contributing components are excluded. Grain: (country_code, year).
+      Optional derived view illustrating one way the mart could be consumed: a
+      weighted composite of six reconciled indicators — not a validated index or
+      an analytical claim. Each component is normalized to [0,1] via
+      PERCENT_RANK() within year, so countries rank relative to peers in the same
+      year. Higher score = higher vulnerability. Composite is the mean of non-null
+      components; rows with fewer than 2 contributing components are excluded.
+      Grain: (country_code, year).
 
-      Data quality notes: components_used indicates how many of the six components
-      contributed to a row's vulnerability_index. Scores built from 2–3 components
-      are less reliable than those built from 5–6; filter on components_used >= 4
-      for higher-confidence analysis. Scores are relative within year, not comparable
-      across years — a score of 0.8 in 2005 and 0.8 in 2020 do not imply the same
-      absolute conditions, only that the country ranked similarly among peers in each
-      year. Raw indicator values are retained alongside normalized scores to support
-      decomposition and sanity-checking.
+      components_used shows how many of six components contributed; 2–3 is less
+      reliable than 5–6 — filter components_used >= 4 for higher confidence.
+      Scores are relative within year only, not comparable across years: 0.8 in
+      2005 and 0.8 in 2020 mean similar peer ranking, not the same absolute
+      conditions. Raw indicator values are retained alongside normalized scores
+      for decomposition and sanity-checking.
     meta:
       owner: pipeline
       domain: composite-index
@@ -180,16 +146,8 @@ models:
         tests:
           - not_null
 
-      - name: region
-        description: "Geographic region (from ND-GAIN). Null when ND-GAIN has no data."
-
-      - name: income_group
-        description: "Income group (from ND-GAIN). Useful for developing-country filtering."
-
       - name: vulnerability_index
-        description: >
-          Composite vulnerability score in [0,1]. Mean of normalized component scores
-          for the components that are non-null. Higher = more vulnerable.
+        description: "Composite vulnerability score in [0,1]: mean of non-null normalized component scores. Higher = more vulnerable."
         tests:
           - is_between:
               arguments:
@@ -249,15 +207,6 @@ models:
 
       - name: gdp_per_capita_usd
         description: "Raw GDP per capita in current USD (from fct_labor_conditions)."
-
-      - name: access_to_electricity_pct
-        description: "Raw access to electricity % (from fct_labor_conditions)."
-
-      - name: precipitation_mm
-        description: "Raw annual precipitation in mm (from fct_labor_conditions)."
-
-      - name: freshwater_withdrawal_pct_internal_resources
-        description: "Raw freshwater withdrawal % of internal resources (from fct_labor_conditions)."
 
       - name: in_economic
         description: "True if this country is covered by the World Bank WDI pipeline."
