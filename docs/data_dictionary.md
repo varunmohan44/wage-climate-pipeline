@@ -1,7 +1,7 @@
 # Data Dictionary — `fct_labor_conditions`
 
-The pipeline's deliverable mart. Wide, one row per `(country_code, year)`. `stg_labor` is
-the spine — every row has at least one ILOSTAT observation for that country-year; World
+Wide, one row per `(country_code, year)`. `stg_labor` is
+the spine as every row has at least one ILOSTAT observation for that country-year; World
 Bank economic context and ND-GAIN vulnerability scores are left-joined and null where the
 source has no data for that country-year. Schema: `dev_facts.fct_labor_conditions` (dbt
 target `dev`; `prod` in production).

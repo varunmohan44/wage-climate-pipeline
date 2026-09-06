@@ -57,6 +57,10 @@ Reconciling three country-identification schemes (ISO-2 / ISO-3 / names) into on
                                  country-year analytical mart
 ```
 
+![dbt lineage graph: three raw sources flow through staging and dim_countries into the fact tables](docs/lineage-graph.png)
+
+*dbt-generated lineage: the three raw sources reconciled through `dim_countries` into `fct_labor_conditions`, with the optional composite view downstream.*
+
 Two separate Postgres instances are used by design. One for Airflow's own metadata and one for pipeline data, so orchestration state never interferes with the analytical tables.
 
 ---
