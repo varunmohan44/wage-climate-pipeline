@@ -25,4 +25,4 @@ build:
 
 # Generate and serve the dbt docs catalog.
 docs:
-	cd dbt && dbt docs generate && dbt docs serve
+	cd dbt && dbt docs generate && dbt docs serve --port 8081
