@@ -3,17 +3,15 @@ version: 2
 models:
   - name: fct_labor_conditions
     description: >
-      Wide analytical labor table. stg_labor is the spine — one row per country/year
-      where ILOSTAT has data. World Bank economic context and ND-GAIN vulnerability
-      scores are left-joined; nulls are preserved so downstream consumers can apply
-      their own coverage thresholds.
-      Grain: (country_code, year).
+      Wide analytical labor table. stg_labor is the spine — one row per
+      country/year where ILOSTAT has data. World Bank economic context and
+      ND-GAIN vulnerability scores are left-joined; nulls preserved so downstream
+      consumers apply their own coverage thresholds. Grain: (country_code, year).
 
-      Data quality notes: every row is guaranteed to have at least one ILOSTAT
-      observation, but that may be only informality_rate with all earnings columns
-      null. The in_economic / in_gain / in_labor flags reflect country-level pipeline
-      coverage, not year-level coverage — a country with in_economic=true can still
-      have null economic columns for years where WB has no observation.
+      Every row has at least one ILOSTAT observation, but that may be only
+      informality_rate with all earnings columns null. in_economic/in_gain/in_labor
+      reflect country-level pipeline coverage, not year-level — in_economic=true
+      doesn't guarantee non-null economic columns for every year.
     meta:
       owner: pipeline
       domain: labor
@@ -109,21 +107,20 @@ models:
 
   - name: fct_wage_climate_vulnerability
     description: >
-      Optional derived view illustrating one way the mart could be consumed: a weighted
-      composite of six reconciled indicators, not a validated index or an analytical
-      claim. Each component is normalized to [0,1] via PERCENT_RANK() within year so
-      countries are ranked relative to peers in the same year. Higher score = higher
-      vulnerability. The composite is the mean of non-null components; rows with fewer
-      than 2 contributing components are excluded. Grain: (country_code, year).
+      Optional derived view illustrating one way the mart could be consumed: a
+      weighted composite of six reconciled indicators — not a validated index or
+      an analytical claim. Each component is normalized to [0,1] via
+      PERCENT_RANK() within year, so countries rank relative to peers in the same
+      year. Higher score = higher vulnerability. Composite is the mean of non-null
+      components; rows with fewer than 2 contributing components are excluded.
+      Grain: (country_code, year).
 
-      Data quality notes: components_used indicates how many of the six components
-      contributed to a row's vulnerability_index. Scores built from 2–3 components
-      are less reliable than those built from 5–6; filter on components_used >= 4
-      for higher-confidence analysis. Scores are relative within year, not comparable
-      across years — a score of 0.8 in 2005 and 0.8 in 2020 do not imply the same
-      absolute conditions, only that the country ranked similarly among peers in each
-      year. Raw indicator values are retained alongside normalized scores to support
-      decomposition and sanity-checking.
+      components_used shows how many of six components contributed; 2–3 is less
+      reliable than 5–6 — filter components_used >= 4 for higher confidence.
+      Scores are relative within year only, not comparable across years: 0.8 in
+      2005 and 0.8 in 2020 mean similar peer ranking, not the same absolute
+      conditions. Raw indicator values are retained alongside normalized scores
+      for decomposition and sanity-checking.
     meta:
       owner: pipeline
       domain: composite-index
@@ -150,9 +147,7 @@ models:
           - not_null
 
       - name: vulnerability_index
-        description: >
-          Composite vulnerability score in [0,1]. Mean of normalized component scores
-          for the components that are non-null. Higher = more vulnerable.
+        description: "Composite vulnerability score in [0,1]: mean of non-null normalized component scores. Higher = more vulnerable."
         tests:
           - is_between:
               arguments:

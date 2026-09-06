@@ -1,5 +1,5 @@
 -- Wide analytical labor table. Joins all three staging models through dim_countries.
--- stg_labor is the spine — only rows where ILOSTAT has data are included.
+-- stg_labor is the spine. Only rows where ILOSTAT has data are included.
 -- All other sources are left-joined so nulls are preserved for the composite index.
 --
 -- Grain: one row per (country_code, year)

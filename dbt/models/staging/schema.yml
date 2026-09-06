@@ -3,15 +3,14 @@ version: 2
 models:
   - name: stg_economic
     description: >
-      Pivoted World Bank WDI data. Wide format — one row per country/year
-      with each indicator as its own column. Nulls are intentionally retained;
-      filtering occurs at the fact layer. Grain: (country_code, year).
+      Pivoted World Bank WDI data: one row per country/year, each indicator its
+      own column. Nulls retained; filtering happens at the fact layer.
+      Grain: (country_code, year).
 
-      Data quality notes: gdp_per_capita_usd and rural_population_pct have broad
-      coverage (~95% of countries for recent years). poverty_headcount_ratio is
-      survey-based and sparse — most countries report every 3–5 years, so long null
-      runs between survey years are expected. oda_received_usd is null for high-income
-      countries that do not receive aid.
+      gdp_per_capita_usd and rural_population_pct: ~95% coverage in recent years.
+      poverty_headcount_ratio: survey-based and sparse — most countries report
+      every 3–5 years, so long null runs are expected. oda_received_usd: null for
+      high-income countries that don't receive aid.
     meta:
       owner: pipeline
       domain: economic
@@ -79,15 +78,15 @@ models:
 
   - name: stg_gain
     description: >
-      ND-GAIN country vulnerability and readiness scores. Slowly changing dimension —
-      scores are updated annually but reflect structural characteristics that shift
-      gradually. Grain: (country_code, year).
+      ND-GAIN country vulnerability and readiness scores. Updated annually but
+      reflect structural characteristics that shift gradually.
+      Grain: (country_code, year).
 
-      Data quality notes: ND-GAIN covers ~185 countries back to 1995. Scores are
-      composite indices themselves (sub-indices for food, water, health, ecosystem,
-      habitat, infrastructure for vulnerability; economic, governance, social for
-      readiness). Changes year-over-year are typically small; large swings in a single
-      year may indicate a data revision rather than a real shock.
+      Covers ~185 countries back to 1995. Scores are composite indices themselves
+      (vulnerability: food, water, health, ecosystem, habitat, infrastructure;
+      readiness: economic, governance, social). Year-over-year changes are
+      typically small — a large single-year swing likely means a data revision,
+      not a real shock.
     meta:
       owner: pipeline
       domain: climate
@@ -143,18 +142,17 @@ models:
 
   - name: stg_labor
     description: >
-      Pivoted ILOSTAT labor data. Wide format — one row per country/year with each
-      indicator×sex combination as its own column. Nulls are intentionally retained;
-      filtering occurs at the fact layer. Grain: (country_code, year).
+      Pivoted ILOSTAT labor data: one row per country/year, each indicator×sex
+      combination its own column. Nulls retained; filtering happens at the fact
+      layer. Grain: (country_code, year).
 
-      Data quality notes: ILOSTAT coverage for developing countries is uneven.
-      avg_nominal_earnings is the sparsest column — many low-income countries either
-      do not conduct wage surveys or do not report to ILO, so null rates of 60–70%
-      for this column among developing-country rows are normal. informality_rate has
-      broader coverage (~50% of country-years). gender_wage_gap_pct is derived from
-      occupation-level data and is sparse for countries without detailed labor surveys.
-      All values reflect the total economy (economic_activity = total); sectoral
-      breakdowns are excluded at ingestion.
+      ILOSTAT coverage for developing countries is uneven. avg_nominal_earnings is
+      sparsest — many low-income countries don't conduct wage surveys or report to
+      ILO, so 60–70% null rates among developing-country rows are normal.
+      informality_rate has broader coverage (~50% of country-years).
+      gender_wage_gap_pct is derived from occupation-level data and is sparse
+      without detailed labor surveys. All values reflect the total economy
+      (economic_activity = total); sectoral breakdowns are excluded at ingestion.
     meta:
       owner: pipeline
       domain: labor
@@ -236,10 +234,10 @@ models:
 
       - name: total_employment_nb
         description: >
-          Total employment count across all statuses (EMP_2EMP_SEX_STE_NB, SEX_T,
-          status_in_employment=STE_AGGREGATE_TOTAL — ILO's current ICSE-18-based
-          total classification, chosen over the legacy STE_ICSE93_TOTAL code which
-          carries near-identical values). Null when ILO has no data.
+          Total employment count, all statuses (EMP_2EMP_SEX_STE_NB, SEX_T,
+          STE_AGGREGATE_TOTAL — ILO's current ICSE-18 classification, used over
+          the legacy STE_ICSE93_TOTAL code, which has near-identical values).
+          Null when ILO has no data.
         meta:
           coverage: high
 
