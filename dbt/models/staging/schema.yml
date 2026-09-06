@@ -8,8 +8,8 @@ models:
       Grain: (country_code, year).
 
       gdp_per_capita_usd and rural_population_pct: ~95% coverage in recent years.
-      poverty_headcount_ratio: survey-based and sparse — most countries report
-      every 3–5 years, so long null runs are expected. oda_received_usd: null for
+      poverty_headcount_ratio: survey-based and sparse, most countries report
+      every 3-5 years, so long null runs are expected. oda_received_usd: null for
       high-income countries that don't receive aid.
     meta:
       owner: pipeline
@@ -44,7 +44,7 @@ models:
         meta:
           coverage: low
           notes: >
-            Survey-based. Most countries report every 3–5 years; long null runs between
+            Survey-based. Most countries report every 3-5 years; long null runs between
             surveys are normal and expected. Do not interpret null as zero.
         tests:
           - is_between:
@@ -85,7 +85,7 @@ models:
       Covers ~185 countries back to 1995. Scores are composite indices themselves
       (vulnerability: food, water, health, ecosystem, habitat, infrastructure;
       readiness: economic, governance, social). Year-over-year changes are
-      typically small — a large single-year swing likely means a data revision,
+      typically small; a large single-year swing likely means a data revision,
       not a real shock.
     meta:
       owner: pipeline
@@ -106,7 +106,7 @@ models:
         tests:
           - not_null
       - name: vulnerability_score
-        description: "ND-GAIN vulnerability score (0–1). Higher = more exposed and sensitive to climate impacts with less capacity to cope."
+        description: "ND-GAIN vulnerability score (0-1). Higher = more exposed and sensitive to climate impacts with less capacity to cope."
         meta:
           coverage: high
         tests:
@@ -115,7 +115,7 @@ models:
                 min_value: 0
                 max_value: 1
       - name: readiness_score
-        description: "ND-GAIN readiness score (0–1). Higher = greater capacity to leverage investment for adaptation."
+        description: "ND-GAIN readiness score (0-1). Higher = greater capacity to direct investment into adaptation."
         meta:
           coverage: high
         tests:
@@ -147,8 +147,8 @@ models:
       layer. Grain: (country_code, year).
 
       ILOSTAT coverage for developing countries is uneven. avg_nominal_earnings is
-      sparsest — many low-income countries don't conduct wage surveys or report to
-      ILO, so 60–70% null rates among developing-country rows are normal.
+      sparsest: many low-income countries don't conduct wage surveys or report to
+      ILO, so 60-70% null rates among developing-country rows are normal.
       informality_rate has broader coverage (~50% of country-years).
       gender_wage_gap_pct is derived from occupation-level data and is sparse
       without detailed labor surveys. All values reflect the total economy
@@ -179,7 +179,7 @@ models:
         description: "Average nominal earnings, all workers (EAR_EHRA_SEX_ECO_CUR_NB, SEX_T). Null when ILO has no data."
         meta:
           coverage: low
-          notes: "Sparse for low-income countries. Null rates of 60–70% among developing-country rows are expected."
+          notes: "Sparse for low-income countries. Null rates of 60-70% among developing-country rows are expected."
 
       - name: avg_nominal_earnings_male
         description: "Average nominal earnings, male workers (EAR_EHRA_SEX_ECO_CUR_NB, SEX_M). Null when ILO has no data."
@@ -198,7 +198,7 @@ models:
           notes: >
             Derived from occupation-level data. Requires detailed labor force surveys;
             absent for many developing countries. Not range-tested: observed values run
-            from -1104% to 97% (e.g. COD, EGY, WSM, ZAF, LBR) — this is the raw ILOSTAT
+            from -1104% to 97% (e.g. COD, EGY, WSM, ZAF, LBR): this is the raw ILOSTAT
             indicator, not an ingestion artifact, so no accepted-range test is applied.
 
       - name: informality_rate_total
@@ -235,7 +235,7 @@ models:
       - name: total_employment_nb
         description: >
           Total employment count, all statuses (EMP_2EMP_SEX_STE_NB, SEX_T,
-          STE_AGGREGATE_TOTAL — ILO's current ICSE-18 classification, used over
+          STE_AGGREGATE_TOTAL: ILO's current ICSE-18 classification, used over
           the legacy STE_ICSE93_TOTAL code, which has near-identical values).
           Null when ILO has no data.
         meta:
